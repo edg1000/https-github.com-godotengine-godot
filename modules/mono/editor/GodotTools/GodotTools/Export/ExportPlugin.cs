@@ -157,7 +157,7 @@ namespace GodotTools.Export
 
             string buildConfig = isDebug ? "ExportDebug" : "ExportRelease";
 
-            if (!BuildManager.BuildProjectBlocking(buildConfig, platform: platform))
+            if (!BuildManager.BuildProjectBlocking(buildConfig, platform: platform, features: features))
                 throw new Exception("Failed to build project");
 
             // Add dependency assemblies
