@@ -436,20 +436,27 @@ void ProjectDialog::ok_pressed() {
 		String dir2 = _test_path();
 		if (dir2.is_empty()) {
 			_set_message(TTR("Invalid project path (changed anything?)."), MESSAGE_ERROR);
+			msg->show();
 			return;
 		}
 
 		// Load project.godot as ConfigFile to set the new name.
-		ConfigFile cfg;
 		String project_godot = dir2.path_join("project.godot");
-		Error err = cfg.load(project_godot);
-		if (err != OK) {
-			_set_message(vformat(TTR("Couldn't load project at '%s' (error %d). It may be missing or corrupted."), project_godot, err), MESSAGE_ERROR);
+		ProjectSettings *cfg = memnew(ProjectSettings(project_godot));
+		if (!cfg->is_project_loaded()) {
+			memdelete(cfg);
+			_set_message(vformat(TTR("Couldn't load project at '%s'. It may be missing or corrupted."), project_godot), MESSAGE_ERROR);
+			msg->show();
+			return;
 		} else {
-			cfg.set_value("application", "config/name", project_name->get_text().strip_edges());
-			err = cfg.save(project_godot);
+			cfg->set("application/config/name", project_name->get_text().strip_edges());
+			Error err = cfg->save_custom(project_godot);
+			memdelete(cfg);
+
 			if (err != OK) {
 				_set_message(vformat(TTR("Couldn't save project at '%s' (error %d)."), project_godot, err), MESSAGE_ERROR);
+				msg->show();
+				return;
 			}
 		}
 
@@ -2495,17 +2502,19 @@ void ProjectManager::_apply_project_tags() {
 		}
 	}
 
-	ConfigFile cfg;
 	const String project_godot = _project_list->get_selected_projects()[0].path.path_join("project.godot");
-	Error err = cfg.load(project_godot);
-	if (err != OK) {
-		tag_edit_error->set_text(vformat(TTR("Couldn't load project at '%s' (error %d). It may be missing or corrupted."), project_godot, err));
+	ProjectSettings *cfg = memnew(ProjectSettings(project_godot));
+	if (!cfg->is_project_loaded()) {
+		memdelete(cfg);
+		tag_edit_error->set_text(vformat(TTR("Couldn't load project at '%s'. It may be missing or corrupted."), project_godot));
 		tag_edit_error->show();
 		callable_mp((Window *)tag_manage_dialog, &Window::show).call_deferred(); // Make sure the dialog does not disappear.
 		return;
 	} else {
-		cfg.set_value("application", "config/tags", tags);
-		err = cfg.save(project_godot);
+		cfg->set("application/config/tags", tags);
+		Error err = cfg->save_custom(project_godot);
+		memdelete(cfg);
+
 		if (err != OK) {
 			tag_edit_error->set_text(vformat(TTR("Couldn't save project at '%s' (error %d)."), project_godot, err));
 			tag_edit_error->show();
