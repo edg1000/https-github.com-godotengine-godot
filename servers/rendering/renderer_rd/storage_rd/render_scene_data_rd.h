@@ -45,6 +45,7 @@ public:
 	Transform3D cam_transform;
 	Projection cam_projection;
 	Vector2 taa_jitter;
+	uint32_t taa_frame_count;
 	uint32_t camera_visible_layers;
 	bool cam_orthogonal = false;
 
@@ -145,7 +146,7 @@ private:
 		uint32_t pancake_shadows;
 		uint32_t camera_visible_layers;
 		float pass_alpha_multiplier;
-		uint32_t pad3;
+		float jitter_fraction; // Used to improve temporal effect quality (value is always between 0.0 and 1.0).
 	};
 
 	struct UBODATA {
