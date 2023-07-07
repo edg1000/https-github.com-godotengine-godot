@@ -201,6 +201,7 @@ public:
 	AutoloadInfo get_autoload(const StringName &p_name) const;
 
 	ProjectSettings();
+	ProjectSettings(const String &p_path);
 	~ProjectSettings();
 };
 
