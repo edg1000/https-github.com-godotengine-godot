@@ -821,7 +821,9 @@ TileSetEditor::TileSetEditor() {
 	sources_add_button = memnew(MenuButton);
 	sources_add_button->set_flat(true);
 	sources_add_button->get_popup()->add_item(TTR("Atlas"));
+	sources_add_button->get_popup()->set_item_tooltip(-1, TTR("A palette of tiles made from a texture."));
 	sources_add_button->get_popup()->add_item(TTR("Scenes Collection"));
+	sources_add_button->get_popup()->set_item_tooltip(-1, TTR("A collection of scenes that can be instantiated and placed as tiles."));
 	sources_add_button->get_popup()->connect("id_pressed", callable_mp(this, &TileSetEditor::_source_add_id_pressed));
 	sources_bottom_actions->add_child(sources_add_button);
 
