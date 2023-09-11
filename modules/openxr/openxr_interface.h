@@ -111,8 +111,9 @@ public:
 	virtual PackedStringArray get_suggested_tracker_names() const override;
 	virtual TrackingStatus get_tracking_status() const override;
 
-	bool is_hand_tracking_supported();
-	bool is_eye_gaze_interaction_supported();
+	bool is_hand_tracking_supported() const;
+	bool is_hand_interaction_supported() const;
+	bool is_eye_gaze_interaction_supported() const;
 
 	bool initialize_on_startup() const;
 	virtual bool is_initialized() const override;
