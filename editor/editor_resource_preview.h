@@ -65,6 +65,8 @@ public:
 class EditorResourcePreview : public Node {
 	GDCLASS(EditorResourcePreview, Node);
 
+	static const int CURRENT_METADATA_VERSION;
+
 	static EditorResourcePreview *singleton;
 
 	struct QueueItem {
@@ -106,7 +108,7 @@ class EditorResourcePreview : public Node {
 	void _iterate();
 
 	void _write_preview_cache(Ref<FileAccess> p_file, int p_thumbnail_size, bool p_has_small_texture, uint64_t p_modified_time, String p_hash, const Dictionary &p_metadata);
-	void _read_preview_cache(Ref<FileAccess> p_file, int *r_thumbnail_size, bool *r_has_small_texture, uint64_t *r_modified_time, String *r_hash, Dictionary *r_metadata);
+	void _read_preview_cache(Ref<FileAccess> p_file, int *r_thumbnail_size, bool *r_has_small_texture, uint64_t *r_modified_time, String *r_hash, Dictionary *r_metadata, bool *r_outdated);
 
 	Vector<Ref<EditorResourcePreviewGenerator>> preview_generators;
 
