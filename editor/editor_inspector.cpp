@@ -2871,7 +2871,7 @@ void EditorInspector::update_tree() {
 			continue;
 		}
 
-		if (p.name == "script") {
+		if (p.name == "script" || p.name == "custom_type_script") {
 			// Script should go into its own category.
 			category_vbox = nullptr;
 		}
@@ -2881,7 +2881,7 @@ void EditorInspector::update_tree() {
 			continue;
 		}
 
-		if (p.name == "script" && (hide_script || bool(object->call("_hide_script_from_inspector")))) {
+		if ((p.name == "script" || p.name == "custom_type_script") && (hide_script || bool(object->call("_hide_script_from_inspector")))) {
 			// Hide script variables from inspector if required.
 			continue;
 		}
