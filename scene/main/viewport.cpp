@@ -1461,8 +1461,6 @@ void Viewport::_gui_show_tooltip() {
 	panel->set_flag(Window::FLAG_NO_FOCUS, true);
 	panel->set_flag(Window::FLAG_POPUP, false);
 	panel->set_flag(Window::FLAG_MOUSE_PASSTHROUGH, true);
-	// A non-embedded tooltip window will only be transparent if per_pixel_transparency is allowed in the main Viewport.
-	panel->set_flag(Window::FLAG_TRANSPARENT, true);
 	panel->set_wrap_controls(true);
 	panel->add_child(base_tooltip);
 	panel->gui_parent = this;
@@ -1471,25 +1469,17 @@ void Viewport::_gui_show_tooltip() {
 
 	tooltip_owner->add_child(gui.tooltip_popup);
 
-	Window *window = Object::cast_to<Window>(gui.tooltip_popup->get_embedder());
-	if (!window) { // Not embedded.
-		window = gui.tooltip_popup->get_parent_visible_window();
-	}
-	float win_scale = window->content_scale_factor;
 	Point2 tooltip_offset = GLOBAL_GET("display/mouse_cursor/tooltip_position_offset");
-	if (!gui.tooltip_popup->is_embedded()) {
-		tooltip_offset *= win_scale;
-	}
 	Rect2 r(gui.tooltip_pos + tooltip_offset, gui.tooltip_popup->get_contents_minimum_size());
+	r.size = r.size.min(panel->get_max_size());
+
+	Window *window = gui.tooltip_popup->get_parent_visible_window();
 	Rect2i vr;
 	if (gui.tooltip_popup->is_embedded()) {
 		vr = gui.tooltip_popup->get_embedder()->get_visible_rect();
 	} else {
-		panel->content_scale_factor = win_scale;
-		r.size *= win_scale;
 		vr = window->get_usable_parent_rect();
 	}
-	r.size = r.size.min(panel->get_max_size());
 
 	if (r.size.x + r.position.x > vr.size.x + vr.position.x) {
 		// Place it in the opposite direction. If it fails, just hug the border.
@@ -3464,6 +3454,16 @@ Viewport::ScreenSpaceAA Viewport::get_screen_space_aa() const {
 	return screen_space_aa;
 }
 
+void Viewport::set_oversampling_factor(float p_oversampling) {
+	ERR_MAIN_THREAD_GUARD;
+	oversampling_factor = p_oversampling;
+}
+
+float Viewport::get_oversampling_factor() const {
+	ERR_READ_THREAD_GUARD_V(1.f);
+	return oversampling_factor;
+}
+
 void Viewport::set_use_taa(bool p_use_taa) {
 	ERR_MAIN_THREAD_GUARD;
 	if (use_taa == p_use_taa) {
@@ -4623,6 +4623,9 @@ void Viewport::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_screen_space_aa", "screen_space_aa"), &Viewport::set_screen_space_aa);
 	ClassDB::bind_method(D_METHOD("get_screen_space_aa"), &Viewport::get_screen_space_aa);
 
+	ClassDB::bind_method(D_METHOD("set_oversampling_factor", "oversampling"), &Viewport::set_oversampling_factor);
+	ClassDB::bind_method(D_METHOD("get_oversampling_factor"), &Viewport::get_oversampling_factor);
+
 	ClassDB::bind_method(D_METHOD("set_use_taa", "enable"), &Viewport::set_use_taa);
 	ClassDB::bind_method(D_METHOD("is_using_taa"), &Viewport::is_using_taa);
 
@@ -4781,6 +4784,7 @@ void Viewport::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mesh_lod_threshold", PROPERTY_HINT_RANGE, "0,1024,0.1"), "set_mesh_lod_threshold", "get_mesh_lod_threshold");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "debug_draw", PROPERTY_HINT_ENUM, "Disabled,Unshaded,Lighting,Overdraw,Wireframe,Normal Buffer,VoxelGI Albedo,VoxelGI Lighting,VoxelGI Emission,Shadow Atlas,Directional Shadow Map,Scene Luminance,SSAO,SSIL,Directional Shadow Splits,Decal Atlas,SDFGI Cascades,SDFGI Probes,VoxelGI/SDFGI Buffer,Disable Mesh LOD,OmniLight3D Cluster,SpotLight3D Cluster,Decal Cluster,ReflectionProbe Cluster,Occlusion Culling Buffer,Motion Vectors,Internal Buffer"), "set_debug_draw", "get_debug_draw");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_hdr_2d"), "set_use_hdr_2d", "is_using_hdr_2d");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "oversampling_factor"), "set_oversampling_factor", "get_oversampling_factor");
 
 #ifndef _3D_DISABLED
 	ADD_GROUP("Scaling 3D", "");

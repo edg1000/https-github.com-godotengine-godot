@@ -3026,9 +3026,9 @@ int Tree::propagate_mouse_event(const Point2i &p_pos, int x_ofs, int y_ofs, int 
 						String s = c.text.get_slicec(',', i);
 						popup_menu->add_item(s.get_slicec(':', 0), s.get_slicec(':', 1).is_empty() ? i : s.get_slicec(':', 1).to_int());
 					}
-
-					popup_menu->set_size(Size2(col_width, 0));
-					popup_menu->set_position(get_screen_position() + Point2i(col_ofs, _get_title_button_height() + y_ofs + item_h) - theme_cache.offset);
+					Rect2i popup_rect = get_final_transform().xform(Rect2i(Point2i(col_ofs, _get_title_button_height() + y_ofs + item_h) - theme_cache.offset, Size2(col_width, 0)));
+					popup_menu->set_size(popup_rect.size);
+					popup_menu->set_position(popup_rect.position);
 					popup_menu->popup();
 					popup_edited_item = p_item;
 					popup_edited_item_col = col;
@@ -3992,14 +3992,12 @@ bool Tree::edit_selected(bool p_force_edit) {
 		return false;
 	}
 
-	float popup_scale = popup_editor->is_embedded() ? 1.0 : popup_editor->get_parent_visible_window()->get_content_scale_factor();
 	Rect2 rect;
 	if (select_mode == SELECT_ROW) {
 		rect = s->get_meta("__focus_col_" + itos(selected_col));
 	} else {
 		rect = s->get_meta("__focus_rect");
 	}
-	rect.position *= popup_scale;
 	popup_edited_item = s;
 	popup_edited_item_col = col;
 
@@ -4024,8 +4022,9 @@ bool Tree::edit_selected(bool p_force_edit) {
 			popup_menu->add_item(s2.get_slicec(':', 0), s2.get_slicec(':', 1).is_empty() ? i : s2.get_slicec(':', 1).to_int());
 		}
 
-		popup_menu->set_size(Size2(rect.size.width, 0));
-		popup_menu->set_position(get_screen_position() + rect.position + Point2i(0, rect.size.height));
+		Rect2i popup_rect = get_final_transform().xform(Rect2i(Vector2(rect.position + Point2i(0, rect.size.height)), Size2(rect.size.width, 0)));
+		popup_menu->set_size(popup_rect.size);
+		popup_menu->set_position(popup_rect.position);
 		popup_menu->popup();
 		popup_edited_item = s;
 		popup_edited_item_col = col;
@@ -4038,11 +4037,11 @@ bool Tree::edit_selected(bool p_force_edit) {
 		// "floor()" centers vertically.
 		Vector2 ofs(0, Math::floor((MAX(line_editor->get_minimum_size().height, rect.size.height - value_editor_height) - rect.size.height) / 2));
 
-		popup_rect.position = get_screen_position() + rect.position - ofs;
+		popup_rect.position = (rect.position - ofs);
 		popup_rect.size = rect.size;
 
 		// Account for icon.
-		Size2 icon_size = _get_cell_icon_size(c) * popup_scale;
+		Size2 icon_size = _get_cell_icon_size(c);
 		popup_rect.position.x += icon_size.x;
 		popup_rect.size.x -= icon_size.x;
 
@@ -4068,11 +4067,10 @@ bool Tree::edit_selected(bool p_force_edit) {
 			value_editor->hide();
 		}
 
+		popup_rect = get_final_transform().xform(popup_rect);
+
 		popup_editor->set_position(popup_rect.position);
-		popup_editor->set_size(popup_rect.size * popup_scale);
-		if (!popup_editor->is_embedded()) {
-			popup_editor->set_content_scale_factor(popup_scale);
-		}
+		popup_editor->set_size(popup_rect.size);
 		popup_editor->popup();
 		popup_editor->child_controls_changed();
 
@@ -4087,11 +4085,9 @@ bool Tree::edit_selected(bool p_force_edit) {
 		text_editor->select_all();
 		text_editor->show();
 
-		popup_editor->set_position(get_screen_position() + rect.position);
-		popup_editor->set_size(rect.size * popup_scale);
-		if (!popup_editor->is_embedded()) {
-			popup_editor->set_content_scale_factor(popup_scale);
-		}
+		rect = get_final_transform().xform(rect);
+		popup_editor->set_position(rect.position);
+		popup_editor->set_size(rect.size);
 		popup_editor->popup();
 		popup_editor->child_controls_changed();
 
@@ -4376,7 +4372,8 @@ void Tree::_notification(int p_what) {
 			if (popup_edited_item != nullptr) {
 				Rect2 rect = popup_edited_item->get_meta("__focus_rect");
 
-				popup_editor->set_position(get_global_position() + rect.position);
+				rect = get_final_transform().xform(rect);
+				popup_editor->set_position(rect.position);
 				popup_editor->set_size(rect.size);
 				popup_editor->child_controls_changed();
 			}
