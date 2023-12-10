@@ -471,6 +471,7 @@ public:
 	Variant(const Signal &p_signal);
 	Variant(const Dictionary &p_dictionary);
 
+	Variant(std::initializer_list<Variant> p_init);
 	Variant(const Array &p_array);
 	Variant(const Vector<Plane> &p_array); // helper
 	Variant(const Vector<uint8_t> &p_byte_array);
