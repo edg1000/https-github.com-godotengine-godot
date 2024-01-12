@@ -284,6 +284,10 @@ void TextEditor::trim_trailing_whitespace() {
 	code_editor->trim_trailing_whitespace();
 }
 
+void TextEditor::trim_final_newlines() {
+	code_editor->trim_final_newlines();
+}
+
 void TextEditor::insert_final_newline() {
 	code_editor->insert_final_newline();
 }
@@ -416,6 +420,9 @@ void TextEditor::_edit_option(int p_op) {
 		} break;
 		case EDIT_TRIM_TRAILING_WHITESAPCE: {
 			trim_trailing_whitespace();
+		} break;
+		case EDIT_TRIM_FINAL_NEWLINES: {
+			trim_final_newlines();
 		} break;
 		case EDIT_CONVERT_INDENT_TO_SPACES: {
 			tx->set_indent_using_spaces(true);
@@ -657,6 +664,7 @@ TextEditor::TextEditor() {
 	edit_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("script_text_editor/duplicate_lines"), EDIT_DUPLICATE_LINES);
 	edit_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("script_text_editor/toggle_word_wrap"), EDIT_TOGGLE_WORD_WRAP);
 	edit_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("script_text_editor/trim_trailing_whitespace"), EDIT_TRIM_TRAILING_WHITESAPCE);
+	edit_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("script_text_editor/trim_final_newlines"), EDIT_TRIM_FINAL_NEWLINES);
 	edit_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("script_text_editor/convert_indent_to_spaces"), EDIT_CONVERT_INDENT_TO_SPACES);
 	edit_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("script_text_editor/convert_indent_to_tabs"), EDIT_CONVERT_INDENT_TO_TABS);
 
