@@ -508,6 +508,26 @@ void OpenXRActionMap::create_default_action_sets() {
 	profile = OpenXRInteractionProfile::new_profile("/interaction_profiles/ext/eye_gaze_interaction");
 	profile->add_new_binding(default_pose, "/user/eyes_ext/input/gaze_ext/pose");
 	add_interaction_profile(profile);
+
+	// Create our hand interaction profile
+	profile = OpenXRInteractionProfile::new_profile("/interaction_profiles/ext/hand_interaction_ext");
+	profile->add_new_binding(default_pose, "/user/hand/left/input/aim/pose,/user/hand/right/input/aim/pose");
+	profile->add_new_binding(aim_pose, "/user/hand/left/input/aim/pose,/user/hand/right/input/aim/pose");
+	profile->add_new_binding(grip_pose, "/user/hand/left/input/grip/pose,/user/hand/right/input/grip/pose");
+	profile->add_new_binding(palm_pose, "/user/hand/left/input/palm_ext/pose,/user/hand/right/input/palm_ext/pose");
+
+	// Use pinch as primary
+	profile->add_new_binding(primary, "/user/hand/left/input/pinch_ext/value,/user/hand/right/input/pinch_ext/value");
+	profile->add_new_binding(primary_click, "/user/hand/left/input/pinch_ext/ready_ext,/user/hand/right/input/pinch_ext/ready_ext");
+
+	// Use activation as secondary
+	profile->add_new_binding(secondary, "/user/hand/left/input/aim_activate_ext/value,/user/hand/right/input/aim_activate_ext/value");
+	profile->add_new_binding(secondary_click, "/user/hand/left/input/aim_activate_ext/ready_ext,/user/hand/right/input/aim_activate_ext/ready_ext");
+
+	// We link graps to our grip
+	profile->add_new_binding(grip, "/user/hand/left/input/grasp_ext/value,/user/hand/right/input/grasp_ext/value");
+	profile->add_new_binding(grip_click, "/user/hand/left/input/grasp_ext/ready_ext,/user/hand/right/input/grasp_ext/ready_ext");
+	add_interaction_profile(profile);
 }
 
 void OpenXRActionMap::create_editor_action_sets() {
