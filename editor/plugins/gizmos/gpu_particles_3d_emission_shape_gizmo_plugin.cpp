@@ -43,7 +43,7 @@
 GPUParticles3DEmissionShapeGizmoPlugin::GPUParticles3DEmissionShapeGizmoPlugin() {
 	helper.instantiate();
 
-	Color gizmo_color = EDITOR_DEF("editors/3d_gizmos/gizmo_colors/particles_emission_shape", Color(0.5, 0.7, 1));
+	Color gizmo_color = EDITOR_DEF_RST("editors/3d_gizmos/gizmo_colors/particles_emission_shape", Color(0.5, 0.7, 1));
 	create_material("particles_emission_shape_material", gizmo_color);
 
 	create_handle_material("handles");
@@ -58,11 +58,11 @@ String GPUParticles3DEmissionShapeGizmoPlugin::get_gizmo_name() const {
 }
 
 int GPUParticles3DEmissionShapeGizmoPlugin::get_priority() const {
-	return -1;
+	return 0;
 }
 
 bool GPUParticles3DEmissionShapeGizmoPlugin::is_selectable_when_hidden() const {
-	return false;
+	return true;
 }
 
 String GPUParticles3DEmissionShapeGizmoPlugin::get_handle_name(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
@@ -169,6 +169,10 @@ void GPUParticles3DEmissionShapeGizmoPlugin::set_handle(const EditorNode3DGizmo 
 		case 4:
 			Geometry3D::get_closest_points_between_segments(Vector3(0, 0, -4096), Vector3(0, 0, 4096), s[0], s[1], ra, rb);
 			// TODO: Ring cases
+		case 5:
+			// TODO: Ring cases
+		case 6:
+			// TODO: Ring cases
 	}
 }
 
@@ -228,17 +232,20 @@ void GPUParticles3DEmissionShapeGizmoPlugin::commit_handle(const EditorNode3DGiz
 void GPUParticles3DEmissionShapeGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 	p_gizmo->clear();
 
-	if (p_gizmo->is_selected()) {
-		GPUParticles3D *particles = Object::cast_to<GPUParticles3D>(p_gizmo->get_node_3d());
+	GPUParticles3D *particles = Object::cast_to<GPUParticles3D>(p_gizmo->get_node_3d());
+
+	if (particles->get_process_material() != nullptr) {
 		Ref<ParticleProcessMaterial> mat = particles->get_process_material();
-		Transform3D transform = particles->get_global_transform();
+		ParticleProcessMaterial::EmissionShape shape = mat->get_emission_shape();
+
+		WARN_PRINT(vformat("Current Emission Shape: %d", shape));
 
 		const Ref<Material> material =
 				get_material("particles_emission_shape_material", p_gizmo);
 		Ref<Material> handles_material = get_material("handles");
 
-		ParticleProcessMaterial::EmissionShape shape = mat->get_emission_shape();
-		if (shape == ParticleProcessMaterial::EMISSION_SHAPE_SPHERE) {
+		if (shape == ParticleProcessMaterial::EMISSION_SHAPE_SPHERE || shape == ParticleProcessMaterial::EMISSION_SHAPE_SPHERE_SURFACE) {
+			WARN_PRINT("Emission shape changed to SPHERE");
 			float r = mat->get_emission_sphere_radius();
 
 			Vector<Vector3> points;
@@ -257,39 +264,89 @@ void GPUParticles3DEmissionShapeGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) 
 				points.push_back(Vector3(b.x, b.y, 0));
 			}
 
-			Vector<Vector3> collision_segments;
-
-			for (int i = 0; i < 64; i++) {
-				float ra = i * (Math_TAU / 64.0);
-				float rb = (i + 1) * (Math_TAU / 64.0);
-				Point2 a = Vector2(Math::sin(ra), Math::cos(ra)) * r;
-				Point2 b = Vector2(Math::sin(rb), Math::cos(rb)) * r;
-
-				collision_segments.push_back(Vector3(a.x, 0, a.y));
-				collision_segments.push_back(Vector3(b.x, 0, b.y));
-				collision_segments.push_back(Vector3(0, a.x, a.y));
-				collision_segments.push_back(Vector3(0, b.x, b.y));
-				collision_segments.push_back(Vector3(a.x, a.y, 0));
-				collision_segments.push_back(Vector3(b.x, b.y, 0));
-			}
+			Vector<Vector3> handles;
+			Vector<int> ids;
+			handles.push_back(Vector3(r, 0, 0));
+			ids.push_back(0);
 
 			p_gizmo->add_lines(points, material);
-			p_gizmo->add_collision_segments(collision_segments);
-			Vector<Vector3> handles;
-			handles.push_back(Vector3(r, 0, 0));
-			p_gizmo->add_handles(handles, handles_material);
+			p_gizmo->add_handles(handles, handles_material, ids);
 		} else if (shape == ParticleProcessMaterial::EMISSION_SHAPE_BOX) {
-			// TODO: Draw box shape
+			WARN_PRINT("Emission shape changed to BOX");
 			Vector3 box_extents = mat->get_emission_box_extents();
-			Ref<BoxMesh> box;
-			box->set_size(box_extents);
-			p_gizmo->add_mesh(box, material, transform);
-			Vector<Vector3> handles = helper->box_get_handles(box->get_size());
-			p_gizmo->add_handles(handles, handles_material);
+			Ref<BoxMesh> box = memnew(BoxMesh);
+			AABB box_aabb = box->get_aabb();
+			Vector<Vector3> lines;
 
-			//Vector<Vector3> handles = helper->box_get_handles(aabb.size);
+			for (int i = 0; i < 12; i++) {
+				Vector3 a, b;
+				box_aabb.get_edge(i, a, b);
+				lines.push_back(a);
+				lines.push_back(b);
+			}
+
+			Vector<Vector3> handles;
+			Vector<int> ids;
+			handles.push_back(Vector3(box_extents.x, 0.0, 0.0));
+			ids.push_back(1);
+			handles.push_back(Vector3(0.0, box_extents.y, 0.0));
+			ids.push_back(2);
+			handles.push_back(Vector3(0.0, 0.0, box_extents.z));
+			ids.push_back(3);
+
+			p_gizmo->add_handles(handles, handles_material, ids);
+			p_gizmo->add_lines(lines, material);
 		} else if (shape == ParticleProcessMaterial::EMISSION_SHAPE_RING) {
-			// TODO: draw ring mesh
+			WARN_PRINT("Emission shape changed to RING");
+			float ring_height = mat->get_emission_ring_height();
+			float half_ring_height = ring_height / 2;
+			float ring_radius = mat->get_emission_ring_radius();
+			float ring_inner_radius = mat->get_emission_ring_inner_radius();
+
+			Vector<Vector3> points;
+
+			for (int i = 0; i <= 360; i++) {
+				float ra = Math::deg_to_rad((float)i);
+				float rb = Math::deg_to_rad((float)i + 1);
+				Point2 a = Vector2(Math::sin(ra), Math::cos(ra)) * ring_radius;
+				Point2 b = Vector2(Math::sin(rb), Math::cos(rb)) * ring_radius;
+				Point2 inner_a = Vector2(Math::sin(ra), Math::cos(ra)) * ring_inner_radius;
+				Point2 inner_b = Vector2(Math::sin(rb), Math::cos(rb)) * ring_inner_radius;
+
+				// outer top ring cap
+				points.push_back(Vector3(a.x, half_ring_height, a.y));
+				points.push_back(Vector3(b.x, half_ring_height, b.y));
+				// outer bottom ring cap
+				points.push_back(Vector3(a.x, -half_ring_height, a.y));
+				points.push_back(Vector3(b.x, -half_ring_height, b.y));
+
+				// inner top ring cap
+				points.push_back(Vector3(inner_a.x, half_ring_height, inner_a.y));
+				points.push_back(Vector3(inner_b.x, half_ring_height, inner_b.y));
+				// inner bottom ring cap
+				points.push_back(Vector3(inner_a.x, -half_ring_height, inner_a.y));
+				points.push_back(Vector3(inner_b.x, -half_ring_height, inner_b.y));
+			}
+
+			for (int i = 0; i <= 360; i=i+90) {
+				float ra = Math::deg_to_rad((float)i);
+				Point2 a = Vector2(Math::sin(ra), Math::cos(ra)) * ring_radius;
+				Point2 inner_a = Vector2(Math::sin(ra), Math::cos(ra)) * ring_inner_radius;
+
+				// outer 90 degrees vertical lines
+				points.push_back(Vector3(a.x, half_ring_height, a.y));
+				points.push_back(Vector3(a.x, -half_ring_height, a.y));
+
+				// inner 90 degrees vertical lines
+				points.push_back(Vector3(inner_a.x, half_ring_height, inner_a.y));
+				points.push_back(Vector3(inner_a.x, -half_ring_height, inner_a.y));
+			}
+
+			Transform3D transform = Transform3D();
+			transform = transform.scaled(Vector3(2,2,2));
+			transform = transform.looking_at(transform.origin + Vector3(0.0, -1.0, 0.0), Vector3(0.0, 0.0, 1.0), true);
+
+			p_gizmo->add_lines(points, material);
 		}
 	}
 }
