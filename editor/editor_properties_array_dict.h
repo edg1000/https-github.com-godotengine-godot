@@ -104,7 +104,7 @@ class EditorPropertyArray : public EditorProperty {
 	int page_index = 0;
 	int changing_type_index;
 	Button *edit = nullptr;
-	MarginContainer *container = nullptr;
+	PanelContainer *container = nullptr;
 	VBoxContainer *property_vbox = nullptr;
 	EditorSpinSlider *size_slider = nullptr;
 	Button *button_add_item = nullptr;
@@ -154,6 +154,7 @@ protected:
 public:
 	void setup(Variant::Type p_array_type, const String &p_hint_string = "");
 	virtual void update_property() override;
+	virtual bool is_colored(ColorationMode p_mode) override;
 	EditorPropertyArray();
 };
 
@@ -168,7 +169,7 @@ class EditorPropertyDictionary : public EditorProperty {
 	int page_index = 0;
 	int changing_type_index;
 	Button *edit = nullptr;
-	MarginContainer *container = nullptr;
+	PanelContainer *container = nullptr;
 	VBoxContainer *property_vbox = nullptr;
 	EditorSpinSlider *size_sliderv = nullptr;
 	Button *button_add_item = nullptr;
@@ -191,6 +192,7 @@ protected:
 public:
 	void setup(PropertyHint p_hint);
 	virtual void update_property() override;
+	virtual bool is_colored(ColorationMode p_mode) override;
 	EditorPropertyDictionary();
 };
 

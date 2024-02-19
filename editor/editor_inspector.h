@@ -66,6 +66,12 @@ public:
 		MENU_OPEN_DOCUMENTATION,
 	};
 
+	enum ColorationMode {
+		COLORATION_CONTAINER_RESOURCE,
+		COLORATION_EXTERNAL,
+		COLORATION_RESOURCE
+	};
+
 private:
 	String label;
 	int text_size;
@@ -140,6 +146,9 @@ protected:
 	virtual Variant _get_cache_value(const StringName &p_prop, bool &r_valid) const;
 	virtual StringName _get_revert_property() const;
 
+	bool updating_theme = false;
+	void _update_property_bg();
+
 public:
 	void emit_changed(const StringName &p_property, const Variant &p_value, const StringName &p_field = StringName(), bool p_changing = false);
 
@@ -175,6 +184,8 @@ public:
 
 	void set_keying(bool p_keying);
 	bool is_keying() const;
+
+	virtual bool is_colored(ColorationMode p_mode) { return false; };
 
 	void set_deletable(bool p_enable);
 	bool is_deletable() const;
@@ -550,8 +561,6 @@ class EditorInspector : public ScrollContainer {
 	void _feature_profile_changed();
 
 	bool _is_property_disabled_by_feature_profile(const StringName &p_property);
-
-	void _update_inspector_bg();
 
 	ConfirmationDialog *add_meta_dialog = nullptr;
 	LineEdit *add_meta_name = nullptr;
