@@ -197,6 +197,7 @@ Error ResourceLoaderText::_parse_ext_resource(VariantParser::Stream *p_stream, R
 Ref<PackedScene> ResourceLoaderText::_parse_node_tag(VariantParser::ResourceParser &parser) {
 	Ref<PackedScene> packed_scene;
 	packed_scene.instantiate();
+	packed_scene->_start_load("text", format_version);
 
 	while (true) {
 		if (next_tag.name == "node") {
@@ -292,6 +293,7 @@ Ref<PackedScene> ResourceLoaderText::_parse_node_tag(VariantParser::ResourcePars
 						return Ref<PackedScene>();
 					} else {
 						error = OK;
+						packed_scene->_finish_load("text", format_version);
 						return packed_scene;
 					}
 				}
@@ -373,6 +375,7 @@ Ref<PackedScene> ResourceLoaderText::_parse_node_tag(VariantParser::ResourcePars
 					return Ref<PackedScene>();
 				} else {
 					error = OK;
+					packed_scene->_finish_load("text", format_version);
 					return packed_scene;
 				}
 			}
@@ -396,6 +399,7 @@ Ref<PackedScene> ResourceLoaderText::_parse_node_tag(VariantParser::ResourcePars
 					return Ref<PackedScene>();
 				} else {
 					error = OK;
+					packed_scene->_finish_load("text", format_version);
 					return packed_scene;
 				}
 			}
@@ -582,6 +586,7 @@ Error ResourceLoaderText::load() {
 
 		int_resources[id] = res; // Always assign int resources.
 		if (do_assign) {
+			res->_start_load("text", format_version);
 			if (cache_mode != ResourceFormatLoader::CACHE_MODE_IGNORE) {
 				res->set_path(path, cache_mode == ResourceFormatLoader::CACHE_MODE_REPLACE);
 			} else if (!path.is_resource_file()) {
@@ -654,6 +659,10 @@ Error ResourceLoaderText::load() {
 		if (!missing_resource_properties.is_empty()) {
 			res->set_meta(META_MISSING_RESOURCES, missing_resource_properties);
 		}
+
+		if (do_assign) {
+			res->_finish_load("text", format_version);
+		}
 	}
 
 	while (true) {
@@ -703,6 +712,8 @@ Error ResourceLoaderText::load() {
 			resource = Ref<Resource>(r);
 		}
 
+		resource->_start_load("text", format_version);
+
 		Dictionary missing_resource_properties;
 
 		while (true) {
@@ -722,6 +733,7 @@ Error ResourceLoaderText::load() {
 						}
 						resource->set_as_translation_remapped(translation_remapped);
 					}
+					break;
 				}
 				return error;
 			}
@@ -780,6 +792,7 @@ Error ResourceLoaderText::load() {
 		if (!missing_resource_properties.is_empty()) {
 			resource->set_meta(META_MISSING_RESOURCES, missing_resource_properties);
 		}
+		resource->_finish_load("text", format_version);
 
 		error = OK;
 
@@ -1055,8 +1068,8 @@ void ResourceLoaderText::open(Ref<FileAccess> p_f, bool p_skip_first_tag) {
 	}
 
 	if (tag.fields.has("format")) {
-		int fmt = tag.fields["format"];
-		if (fmt > FORMAT_VERSION) {
+		format_version = tag.fields["format"];
+		if (format_version > FORMAT_VERSION) {
 			error_text = "Saved with newer format version";
 			_printerr();
 			error = ERR_PARSE_ERROR;
