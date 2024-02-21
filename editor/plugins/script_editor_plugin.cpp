@@ -966,6 +966,10 @@ void ScriptEditor::_resave_scripts(const String &p_str) {
 			se->trim_trailing_whitespace();
 		}
 
+		if (trim_final_newlines_on_save) {
+			se->trim_final_newlines();
+		}
+
 		se->insert_final_newline();
 
 		if (convert_indent_on_save) {
@@ -1335,6 +1339,10 @@ void ScriptEditor::_menu_option(int p_option) {
 			case FILE_SAVE_AS: {
 				if (trim_trailing_whitespace_on_save) {
 					current->trim_trailing_whitespace();
+				}
+
+				if (trim_final_newlines_on_save) {
+					current->trim_final_newlines();
 				}
 
 				current->insert_final_newline();
@@ -2516,6 +2524,10 @@ void ScriptEditor::save_current_script() {
 		current->trim_trailing_whitespace();
 	}
 
+	if (trim_final_newlines_on_save) {
+		current->trim_final_newlines();
+	}
+
 	current->insert_final_newline();
 
 	if (convert_indent_on_save) {
@@ -2558,6 +2570,10 @@ void ScriptEditor::save_all_scripts() {
 
 		if (trim_trailing_whitespace_on_save) {
 			se->trim_trailing_whitespace();
+		}
+
+		if (trim_final_newlines_on_save) {
+			se->trim_final_newlines();
 		}
 
 		se->insert_final_newline();
@@ -2791,6 +2807,7 @@ void ScriptEditor::_editor_settings_changed() {
 	}
 
 	trim_trailing_whitespace_on_save = EDITOR_GET("text_editor/behavior/files/trim_trailing_whitespace_on_save");
+	trim_final_newlines_on_save = EDITOR_GET("text_editor/behavior/files/trim_final_newlines_on_save");
 	convert_indent_on_save = EDITOR_GET("text_editor/behavior/files/convert_indent_on_save");
 
 	members_overview_enabled = EDITOR_GET("text_editor/script_list/show_members_overview");
@@ -4170,6 +4187,7 @@ ScriptEditor::ScriptEditor(WindowWrapper *p_wrapper) {
 
 	edit_pass = 0;
 	trim_trailing_whitespace_on_save = EDITOR_GET("text_editor/behavior/files/trim_trailing_whitespace_on_save");
+	trim_final_newlines_on_save = EDITOR_GET("text_editor/behavior/files/trim_final_newlines_on_save");
 	convert_indent_on_save = EDITOR_GET("text_editor/behavior/files/convert_indent_on_save");
 
 	ScriptServer::edit_request_func = _open_script_request;
