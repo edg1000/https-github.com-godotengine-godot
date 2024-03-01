@@ -62,7 +62,7 @@
 			<param index="1" name="tooltip" type="String" />
 			<param index="2" name="callback" type="Callable" />
 			<description>
-				Creates a new application status indicator with the specified icon, tooltip, and activation callback.
+				Creates a new application status indicator with the specified icon, tooltip, and activation callback. [param callback] will be called with two arguments: [int] mouse button index (one of [enum MouseButton] values) and [Vector2i] click position in screen coordinates.
 			</description>
 		</method>
 		<method name="cursor_get_shape" qualifiers="const">
@@ -102,7 +102,7 @@
 			<param index="2" name="existing_text" type="String" />
 			<param index="3" name="callback" type="Callable" />
 			<description>
-				Shows a text input dialog which uses the operating system's native look-and-feel. [param callback] will be called with a [String] argument equal to the text field's contents when the dialog is closed for any reason.
+				Shows a text input dialog which uses the operating system's native look-and-feel. [param callback] will be called with a single [String] argument equal to the text field's contents when the dialog is closed for any reason.
 				[b]Note:[/b] This method is implemented only on macOS.
 			</description>
 		</method>
@@ -113,7 +113,7 @@
 			<param index="2" name="buttons" type="PackedStringArray" />
 			<param index="3" name="callback" type="Callable" />
 			<description>
-				Shows a text dialog which uses the operating system's native look-and-feel. [param callback] will be called when the dialog is closed for any reason.
+				Shows a text dialog which uses the operating system's native look-and-feel. [param callback] will be called when the dialog is closed for any reason. [param callback] will be called with a single [int] argument equal to the pressed button index.
 				[b]Note:[/b] This method is implemented only on macOS.
 			</description>
 		</method>
@@ -873,7 +873,7 @@
 			<param index="1" name="open_callback" type="Callable" />
 			<param index="2" name="close_callback" type="Callable" />
 			<description>
-				Registers callables to emit when the menu is respectively about to show or closed.
+				Registers callables to emit when the menu is respectively about to show or closed. Callback methods should have zero arguments.
 			</description>
 		</method>
 		<method name="has_feature" qualifiers="const">
@@ -1168,7 +1168,7 @@
 			<param index="0" name="id" type="int" />
 			<param index="1" name="callback" type="Callable" />
 			<description>
-				Sets the application status indicator activation callback.
+				Sets the application status indicator activation callback. [param callback] will be called with two arguments: [int] mouse button index (one of [enum MouseButton] values) and [Vector2i] click position in screen coordinates.
 			</description>
 		</method>
 		<method name="status_indicator_set_icon">
@@ -1535,7 +1535,7 @@
 			<param index="0" name="callback" type="Callable" />
 			<param index="1" name="window_id" type="int" default="0" />
 			<description>
-				Sets the [param callback] that should be called when files are dropped from the operating system's file manager to the window specified by [param window_id].
+				Sets the [param callback] that should be called when files are dropped from the operating system's file manager to the window specified by [param window_id]. Callback method should have one [PackedStringArray] argument, dropped file list.
 				[b]Warning:[/b] Advanced users only! Adding such a callback to a [Window] node will override its default implementation, which can introduce bugs.
 				[b]Note:[/b] This method is implemented on Windows, macOS, Linux (X11/Wayland), and Web.
 			</description>
