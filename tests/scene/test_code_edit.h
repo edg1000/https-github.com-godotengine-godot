@@ -1806,6 +1806,12 @@ TEST_CASE("[SceneTree][CodeEdit] indent") {
 		code_edit->set_indent_using_spaces(true);
 		CHECK(code_edit->is_indent_using_spaces());
 
+		code_edit->set_tab_always_indents(false);
+		CHECK_FALSE(code_edit->is_tab_always_indents());
+
+		code_edit->set_tab_always_indents(true);
+		CHECK(code_edit->is_tab_always_indents());
+
 		/* Only the first char is registered. */
 		TypedArray<String> auto_indent_prefixes;
 		auto_indent_prefixes.push_back("::");
@@ -1823,6 +1829,7 @@ TEST_CASE("[SceneTree][CodeEdit] indent") {
 		code_edit->set_indent_size(4);
 		code_edit->set_auto_indent_enabled(true);
 		code_edit->set_indent_using_spaces(false);
+		code_edit->set_tab_always_indents(false);
 
 		/* Do nothing if not editable. */
 		code_edit->set_editable(false);
@@ -1848,6 +1855,14 @@ TEST_CASE("[SceneTree][CodeEdit] indent") {
 		code_edit->insert_text_at_caret("test");
 		code_edit->do_indent();
 		CHECK(code_edit->get_line(0) == "test\t");
+
+		/* Indents when tab_always_indents is set. */
+		code_edit->set_tab_always_indents(true);
+		code_edit->set_text("");
+		code_edit->insert_text_at_caret("test");
+		code_edit->do_indent();
+		CHECK(code_edit->get_line(0) == "\ttest");
+		code_edit->set_tab_always_indents(false);
 
 		/* Indent lines does entire line and works without selection. */
 		code_edit->set_text("");
@@ -1896,6 +1911,7 @@ TEST_CASE("[SceneTree][CodeEdit] indent") {
 		code_edit->set_indent_size(4);
 		code_edit->set_auto_indent_enabled(true);
 		code_edit->set_indent_using_spaces(true);
+		code_edit->set_tab_always_indents(false);
 
 		/* Do nothing if not editable. */
 		code_edit->set_editable(false);
@@ -1921,6 +1937,14 @@ TEST_CASE("[SceneTree][CodeEdit] indent") {
 		code_edit->insert_text_at_caret("test");
 		code_edit->do_indent();
 		CHECK(code_edit->get_line(0) == "test    ");
+
+		/* Indents when tab_always_indents is set. */
+		code_edit->set_tab_always_indents(true);
+		code_edit->set_text("");
+		code_edit->insert_text_at_caret("test");
+		code_edit->do_indent();
+		CHECK(code_edit->get_line(0) == "    test");
+		code_edit->set_tab_always_indents(false);
 
 		/* Indent lines does entire line and works without selection. */
 		code_edit->set_text("");
