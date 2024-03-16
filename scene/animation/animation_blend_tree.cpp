@@ -106,10 +106,12 @@ double AnimationNodeAnimation::_process(const AnimationMixer::PlaybackInfo p_pla
 			if (prev_time >= 0 && cur_time < 0) {
 				backward = !backward;
 				looped_flag = node_backward ? Animation::LOOPED_FLAG_END : Animation::LOOPED_FLAG_START;
+				process_state->tree->call_deferred(SNAME("emit_signal"), SceneStringNames::get_singleton()->animation_looped, animation, true);
 			}
 			if (prev_time <= anim_size && cur_time > anim_size) {
 				backward = !backward;
 				looped_flag = node_backward ? Animation::LOOPED_FLAG_START : Animation::LOOPED_FLAG_END;
+				process_state->tree->call_deferred(SNAME("emit_signal"), SceneStringNames::get_singleton()->animation_looped, animation, false);
 			}
 			cur_time = Math::pingpong(cur_time, anim_size);
 		}
@@ -118,9 +120,11 @@ double AnimationNodeAnimation::_process(const AnimationMixer::PlaybackInfo p_pla
 		if (!Math::is_zero_approx(anim_size)) {
 			if (prev_time >= 0 && cur_time < 0) {
 				looped_flag = node_backward ? Animation::LOOPED_FLAG_END : Animation::LOOPED_FLAG_START;
+				process_state->tree->call_deferred(SNAME("emit_signal"), SceneStringNames::get_singleton()->animation_looped, animation, true);
 			}
 			if (prev_time <= anim_size && cur_time > anim_size) {
 				looped_flag = node_backward ? Animation::LOOPED_FLAG_START : Animation::LOOPED_FLAG_END;
+				process_state->tree->call_deferred(SNAME("emit_signal"), SceneStringNames::get_singleton()->animation_looped, animation, false);
 			}
 			cur_time = Math::fposmod(cur_time, anim_size);
 		}
