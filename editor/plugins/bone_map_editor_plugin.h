@@ -45,6 +45,7 @@
 #include "scene/gui/color_rect.h"
 #include "scene/gui/dialogs.h"
 #include "scene/resources/bone_map.h"
+#include "scene/resources/surface_tool.h"
 #include "scene/resources/texture.h"
 
 class AspectRatioContainer;
@@ -182,6 +183,8 @@ class BoneMapper : public VBoxContainer {
 	bool is_match_with_bone_name(const String &p_bone_name, const String &p_word);
 	int search_bone_by_name(Skeleton3D *p_skeleton, const Vector<String> &p_picklist, BoneSegregation p_segregation = BONE_SEGREGATION_NONE, int p_parent = -1, int p_child = -1, int p_children_count = -1);
 	BoneSegregation guess_bone_segregation(const String &p_bone_name);
+	LocalVector<LocalVector<SurfaceTool::Vertex>> get_vertices_list(Skeleton3D *p_skeleton);
+	bool is_bound_by_surface(LocalVector<LocalVector<SurfaceTool::Vertex>> &p_vertices_list, Skeleton3D *p_skeleton, int p_bone_idx);
 	void auto_mapping_process(Ref<BoneMap> &p_bone_map);
 	void _run_auto_mapping();
 #endif // MODULE_REGEX_ENABLED
