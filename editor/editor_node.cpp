@@ -1914,7 +1914,43 @@ void EditorNode::try_autosave() {
 			_save_scene_with_preview(scene->get_scene_file_path());
 		}
 	}
-	_menu_option(FILE_SAVE_ALL_SCENES);
+
+	bool all_saved = true;
+	for (int i = 0; i < editor_data.get_edited_scene_count(); i++) {
+		Node *scene = editor_data.get_edited_scene_root(i);
+		if (!scene) {
+			continue;
+		}
+
+		const String &scene_path = scene->get_scene_file_path();
+		if (!scene_path.is_empty() && DirAccess::exists(scene_path.get_base_dir())) {
+			bool needs_save = editor_data.is_scene_changed(i);
+			if (!needs_save) {
+				// Check if scene has unsaved changes in built-in resources.
+				for (int j = 0; j < editor_data.get_editor_plugin_count(); j++) {
+					if (!editor_data.get_editor_plugin(j)->get_unsaved_status(scene_path).is_empty()) {
+						needs_save = true;
+						break;
+					}
+				}
+			}
+
+			if (needs_save) {
+				if (i != editor_data.get_edited_scene()) {
+					_save_scene(scene_path, i);
+				} else {
+					_save_scene_with_preview(scene_path);
+				}
+			}
+		} else if (!scene_path.is_empty()) {
+			all_saved = false;
+		}
+	}
+
+	if (!all_saved) {
+		show_warning(TTR("Could not save one or more scenes!"), TTR("Save All Scenes"));
+	}
+	save_default_environment();
 	editor_data.save_editor_external_data();
 }
 
