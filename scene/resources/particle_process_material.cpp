@@ -1568,6 +1568,7 @@ bool ParticleProcessMaterial::get_particle_flag(ParticleFlags p_particle_flag) c
 void ParticleProcessMaterial::set_emission_shape(EmissionShape p_shape) {
 	ERR_FAIL_INDEX(p_shape, EMISSION_SHAPE_MAX);
 	emission_shape = p_shape;
+	emit_signal("emission_shape_changed");
 	notify_property_list_changed();
 	_queue_shader_change();
 }
