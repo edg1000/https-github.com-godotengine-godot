@@ -6,7 +6,7 @@
 [subrepo]
 	remote = https://github.com/V-Sekai/many_bone_ik.git
 	branch = main
-	commit = 7d5db38d3dbdb8a4b30f849b8522d9272550d1df
-	parent = 0166e5f84424f15bdc4f45b63148b4741fda7844
+	commit = ea50836e9fe42740cfd9e0643525a2dab67b1791
+	parent = 37d0b4d2f36930e1c2b7a4c0dbe118fb4034ca50
 	method = merge
 	cmdver = 0.4.6
