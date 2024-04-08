@@ -79,8 +79,6 @@ class ManyBoneIK3D : public Node3D {
 	void _set_bone_count(int32_t p_count);
 	void _set_pin_root_bone(int32_t p_pin_index, const String &p_root_bone);
 	String _get_pin_root_bone(int32_t p_pin_index) const;
-	bool _is_descendant_of(int bone_i, int parent_bone_i) const;
-	bool _is_ancestor_of(int potential_ancestor, int bone_idx) const;
 
 protected:
 	bool _set(const StringName &p_name, const Variant &p_value);
