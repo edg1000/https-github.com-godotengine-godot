@@ -480,7 +480,7 @@ bool ProjectSettings::_load_resource_pack(const String &p_pack, bool p_replace_f
 		return false;
 	}
 
-	if (!using_datapack && OS::get_singleton()->has_feature("editor")) {
+	if (!using_datapack && !OS::get_singleton()->get_resource_dir().is_empty()) {
 		// Add the project's resource file system to PackedData so file access keeps working when
 		// the game is running from the editor without a main pack.
 		PackedData::get_singleton()->add_pack_source(memnew(PackedSourceDirectory));
