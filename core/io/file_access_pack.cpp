@@ -271,7 +271,7 @@ bool PackedSourceDirectory::try_open_pack(const String &p_path, bool p_replace_f
 	// load with offset feature only supported for PCK files
 	ERR_FAIL_COND_V_MSG(p_offset != 0, false, "Invalid PCK data. Note that loading files with a non-zero offset isn't supported with directories.");
 
-	if(!DirAccess::dir_exists_absolute(p_path) || !p_path.begins_with("res://")) {
+	if (!DirAccess::dir_exists_absolute(p_path) || !p_path.begins_with("res://")) {
 		return false;
 	}
 	add_directory(p_path, p_replace_files);
@@ -283,14 +283,14 @@ Ref<FileAccess> PackedSourceDirectory::get_file(const String &p_path, PackedData
 }
 
 void PackedSourceDirectory::add_directory(const String &p_path, bool p_replace_files) {
-	for(String file_name : DirAccess::get_files_at(p_path)) {
+	for (String file_name : DirAccess::get_files_at(p_path)) {
 		String file_path = p_path.path_join(file_name);
 		print_line(file_path);
 		uint8_t md5[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 		PackedData::get_singleton()->add_path(p_path, file_path, 0, 0, md5, this, p_replace_files, false);
 	}
 
-	for(String sub_dir_name : DirAccess::get_directories_at(p_path)) {
+	for (String sub_dir_name : DirAccess::get_directories_at(p_path)) {
 		String sub_dir_path = p_path.path_join(sub_dir_name);
 		add_directory(sub_dir_path, p_replace_files);
 	}
