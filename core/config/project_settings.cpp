@@ -480,6 +480,13 @@ bool ProjectSettings::_load_resource_pack(const String &p_pack, bool p_replace_f
 		return false;
 	}
 
+	if(!using_datapack && OS::get_singleton()->has_feature("editor")) {
+		// Add the project's resource file system to PackedData so file access keeps working when
+		// the game is running from the editor without a main pack.
+		PackedData::get_singleton()->add_pack_source(memnew(PackedSourceDirectory));
+		PackedData::get_singleton()->add_pack("res://", false, 0);
+	}
+
 	if (project_loaded) {
 		// This pack may have declared new global classes (make sure they are picked up).
 		refresh_global_class_list();
