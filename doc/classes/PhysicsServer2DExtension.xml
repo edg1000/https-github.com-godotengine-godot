@@ -963,6 +963,12 @@
 				Overridable version of [method PhysicsServer2D.set_active].
 			</description>
 		</method>
+		<method name="_is_active" qualifiers="virtual">
+			<return type="bool" />
+			<description>
+				Overridable version of [method PhysicsServer2D.is_active].
+			</description>
+		</method>
 		<method name="_shape_collide" qualifiers="virtual">
 			<return type="bool" />
 			<param index="0" name="shape_A" type="RID" />

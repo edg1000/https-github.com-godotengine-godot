@@ -900,6 +900,12 @@
 				Activates or deactivates the 2D physics server. If [param active] is [code]false[/code], then the physics server will not do anything in its physics step.
 			</description>
 		</method>
+		<method name="is_active">
+			<return type="bool" />
+			<description>
+				Returns whether or not the 2D physics server is active.
+			</description>
+		</method>
 		<method name="shape_get_data" qualifiers="const">
 			<return type="Variant" />
 			<param index="0" name="shape" type="RID" />

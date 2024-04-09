@@ -980,6 +980,12 @@
 				Activates or deactivates the 3D physics engine.
 			</description>
 		</method>
+		<method name="is_active">
+			<return type="bool" />
+			<description>
+				Returns whether or not the 3D physics engine is active.
+			</description>
+		</method>
 		<method name="shape_get_data" qualifiers="const">
 			<return type="Variant" />
 			<param index="0" name="shape" type="RID" />
