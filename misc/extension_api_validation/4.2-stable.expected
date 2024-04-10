@@ -272,3 +272,11 @@ Validate extension JSON: API was removed: classes/SkeletonIK3D/methods/set_inter
 Validate extension JSON: API was removed: classes/SkeletonIK3D/properties/interpolation
 
 These base class is changed to SkeletonModifier3D which is processed by Skeleton3D with the assumption that it is Skeleton3D's child.
+
+
+GH-86978
+--------
+Validate extension JSON: Error: Field 'classes/TextEdit/methods/set_selection_mode/arguments': size changed value in new API, from 4 to 1.
+
+Removed optional arguments set_selection_mode, use set_selection_origin_line/column instead. 
+Compatibility methods registered.
