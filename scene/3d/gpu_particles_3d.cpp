@@ -486,11 +486,6 @@ void GPUParticles3D::_notification(int p_what) {
 					}
 				}
 			}
-
-			Ref<ParticleProcessMaterial> material = get_process_material();
-			if (material.is_valid()) {
-				material->connect("emission_shape_changed", callable_mp((Node3D *)this, &GPUParticles3D::update_gizmos));
-			}
 		} break;
 
 		case NOTIFICATION_ENTER_TREE: {
@@ -505,10 +500,18 @@ void GPUParticles3D::_notification(int p_what) {
 			}
 			previous_position = get_global_transform().origin;
 			set_process_internal(true);
+
+			Ref<ParticleProcessMaterial> material = get_process_material();
+			ERR_FAIL_NULL(material);
+			material->connect("emission_shape_changed", callable_mp((Node3D *)this, &GPUParticles3D::update_gizmos));
 		} break;
 
 		case NOTIFICATION_EXIT_TREE: {
 			RS::get_singleton()->particles_set_subemitter(particles, RID());
+
+			Ref<ParticleProcessMaterial> material = get_process_material();
+			ERR_FAIL_NULL(material);
+			material->disconnect("emission_shape_changed", callable_mp((Node3D *)this, &GPUParticles3D::update_gizmos));
 		} break;
 
 		case NOTIFICATION_PAUSED:

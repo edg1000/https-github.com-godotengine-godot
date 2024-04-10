@@ -31,8 +31,8 @@
 #ifndef GPU_PARTICLES_3D_EMISSION_SHAPE_GIZMO_PLUGIN_H
 #define GPU_PARTICLES_3D_EMISSION_SHAPE_GIZMO_PLUGIN_H
 
-#include "editor/plugins/node_3d_editor_gizmos.h"
 #include "editor/plugins/gizmos/gizmo_3d_helper.h"
+#include "editor/plugins/node_3d_editor_gizmos.h"
 
 class GPUParticles3DEmissionShapeGizmoPlugin : public EditorNode3DGizmoPlugin {
 	GDCLASS(GPUParticles3DEmissionShapeGizmoPlugin, EditorNode3DGizmoPlugin);
