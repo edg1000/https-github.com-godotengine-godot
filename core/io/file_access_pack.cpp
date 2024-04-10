@@ -285,7 +285,6 @@ Ref<FileAccess> PackedSourceDirectory::get_file(const String &p_path, PackedData
 void PackedSourceDirectory::add_directory(const String &p_path, bool p_replace_files) {
 	for (String file_name : DirAccess::get_files_at(p_path)) {
 		String file_path = p_path.path_join(file_name);
-		print_line(file_path);
 		uint8_t md5[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 		PackedData::get_singleton()->add_path(p_path, file_path, 0, 0, md5, this, p_replace_files, false);
 	}
