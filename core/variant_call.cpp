@@ -464,6 +464,10 @@ struct _VariantCall {
 	VCALL_LOCALMEM1R(Vector3, limit_length);
 	VCALL_LOCALMEM0R(Vector3, sign);
 
+	static void _call_Vector3_quat_to(Variant &r_ret, Variant &p_self, const Variant **p_args) {
+		r_ret = Quat(p_self.operator Vector3(), p_args[0]->operator Vector3());
+	}
+
 	VCALL_LOCALMEM0R(Plane, normalized);
 	VCALL_LOCALMEM0R(Plane, center);
 	VCALL_LOCALMEM0R(Plane, get_any_point);
@@ -1874,6 +1878,7 @@ void register_variant_methods() {
 	ADDFUNC1R(VECTOR3, VECTOR3, Vector3, reflect, VECTOR3, "n", varray());
 	ADDFUNC1R(VECTOR3, VECTOR3, Vector3, limit_length, REAL, "length", varray(1.0));
 	ADDFUNC0R(VECTOR3, VECTOR3, Vector3, sign, varray());
+	ADDFUNC1R(VECTOR3, QUAT, Vector3, quat_to, VECTOR3, "to", varray());
 
 	ADDFUNC0R(PLANE, PLANE, Plane, normalized, varray());
 	ADDFUNC0R(PLANE, VECTOR3, Plane, center, varray());

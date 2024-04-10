@@ -207,6 +207,13 @@
 				Returns this vector projected onto the vector [code]b[/code].
 			</description>
 		</method>
+		<method name="quat_to">
+			<return type="Quat" />
+			<argument index="0" name="to" type="Vector3" />
+			<description>
+				Returns the quaternion representing the shortest arc between this vector and [code]to[/code]. These can be imagined as two points intersecting a sphere's surface, with a radius of [code]1.0[/code].
+			</description>
+		</method>
 		<method name="reflect">
 			<return type="Vector3" />
 			<argument index="0" name="n" type="Vector3" />
