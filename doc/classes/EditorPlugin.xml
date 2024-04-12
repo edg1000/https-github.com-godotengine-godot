@@ -499,6 +499,11 @@
 			<param index="0" name="class" type="String" />
 			<param index="1" name="callable" type="Callable" />
 			<description>
+                Hooks [EditorInspectorArray] callback to allow handling the add, remove and change order actions.
+                The values of [param from_index] and [param to_position] determine if the array element is being added, removed or moved.
+                If [param from_index] is [code]-1[/code] then a new element is being added.
+                If [param to_position] is [code]-1[/code] then an element is being removed.
+                If [param from_index] and [param to_position] are >= 0 then they indicate the current and previous position in the array for a specific element.
 			</description>
 		</method>
 		<method name="add_node_3d_gizmo_plugin">
@@ -686,6 +691,7 @@
 			<return type="void" />
 			<param index="0" name="class" type="String" />
 			<description>
+                Removes a move array element function registered by [method add_move_array_element_function].
 			</description>
 		</method>
 		<method name="remove_node_3d_gizmo_plugin">
