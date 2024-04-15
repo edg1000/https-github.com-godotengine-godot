@@ -179,10 +179,10 @@
 			</description>
 		</method>
 		<method name="get_api_type" qualifiers="const">
-			<return type="int" enum="APIType" />
+			<return type="int" enum="ApiType" />
 			<param index="0" name="class" type="StringName" />
 			<description>
-				Returns the parent class of [param class].
+				Returns the ApiType class of [param class].See [enum ApiType]
 			</description>
 		</method>
 		<method name="instantiate" qualifiers="const">
@@ -209,21 +209,15 @@
 		</method>
 	</methods>
 	<constants>
-		<constant name="API_CORE" value="0" enum="APIType">
-			The resource is invalid, or has not been loaded with [method load_threaded_request].
+		<constant name="API_CORE" value="0" enum="ApiType">
 		</constant>
-		<constant name="API_EDITOR" value="1" enum="APIType">
-			The resource is still being loaded.
+		<constant name="API_EDITOR" value="1" enum="ApiType">
 		</constant>
-		<constant name="API_EXTENSION" value="2" enum="APIType">
-			Some error occurred during loading and it failed.
+		<constant name="API_EXTENSION" value="2" enum="ApiType">
 		</constant>
-		<constant name="API_EDITOR_EXTENSION" value="3" enum="APIType">
-			The resource was loaded successfully and can be accessed via [method load_threaded_get].
+		<constant name="API_EDITOR_EXTENSION" value="3" enum="ApiType">
 		</constant>
-		<constant name="API_NONE" value="4" enum="APIType">
-			Neither the main resource (the one requested to be loaded) nor any of its subresources are retrieved from cache nor stored into it. Dependencies (external resources) are loaded with [constant CACHE_MODE_REUSE].
+		<constant name="API_NONE" value="4" enum="ApiType">
 		</constant>
-
 	</constants>
 </class>

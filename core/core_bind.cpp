@@ -1372,8 +1372,8 @@ bool ClassDB::can_instantiate(const StringName &p_class) const {
 	return ::ClassDB::can_instantiate(p_class);
 }
 
-ClassDB::APIType ClassDB::get_api_type(const StringName &p_class) const {
-    return (APIType)::ClassDB::get_api_type(p_class);
+ClassDB::ApiType ClassDB::get_api_type(const StringName &p_class) const {
+	return (ApiType)::ClassDB::get_api_type(p_class);
 }
 
 Variant ClassDB::instantiate(const StringName &p_class) const {
@@ -1548,7 +1548,7 @@ void ClassDB::get_argument_options(const StringName &p_function, int p_idx, List
 				pf == "class_has_method" || pf == "class_get_method_list" ||
 				pf == "class_get_integer_constant_list" || pf == "class_has_integer_constant" || pf == "class_get_integer_constant" ||
 				pf == "class_has_enum" || pf == "class_get_enum_list" || pf == "class_get_enum_constants" || pf == "class_get_integer_constant_enum" ||
-				pf == "is_class_enabled");
+				pf == "is_class_enabled" || pf == "get_api_type");
 	}
 	if (first_argument_is_class || pf == "is_parent_class") {
 		for (const String &E : get_class_list()) {
@@ -1595,6 +1595,12 @@ void ClassDB::_bind_methods() {
 	::ClassDB::bind_method(D_METHOD("class_get_integer_constant_enum", "class", "name", "no_inheritance"), &ClassDB::class_get_integer_constant_enum, DEFVAL(false));
 
 	::ClassDB::bind_method(D_METHOD("is_class_enabled", "class"), &ClassDB::is_class_enabled);
+
+	BIND_ENUM_CONSTANT(API_CORE);
+	BIND_ENUM_CONSTANT(API_EDITOR);
+	BIND_ENUM_CONSTANT(API_EXTENSION);
+	BIND_ENUM_CONSTANT(API_EDITOR_EXTENSION);
+	BIND_ENUM_CONSTANT(API_NONE);
 }
 
 } // namespace special
