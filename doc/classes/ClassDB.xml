@@ -158,6 +158,13 @@
 				Sets [param property] value of [param object] to [param value].
 			</description>
 		</method>
+		<method name="get_api_type" qualifiers="const">
+			<return type="int" enum="ClassDB.ApiType" />
+			<param index="0" name="class" type="StringName" />
+			<description>
+				Returns the api type of [param class].See [enum ApiType]
+			</description>
+		</method>
 		<method name="get_class_list" qualifiers="const">
 			<return type="PackedStringArray" />
 			<description>
@@ -176,13 +183,6 @@
 			<param index="0" name="class" type="StringName" />
 			<description>
 				Returns the parent class of [param class].
-			</description>
-		</method>
-		<method name="get_api_type" qualifiers="const">
-			<return type="int" enum="ApiType" />
-			<param index="0" name="class" type="StringName" />
-			<description>
-				Returns the ApiType class of [param class].See [enum ApiType]
 			</description>
 		</method>
 		<method name="instantiate" qualifiers="const">
