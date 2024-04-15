@@ -1373,7 +1373,8 @@ bool ClassDB::can_instantiate(const StringName &p_class) const {
 }
 
 ClassDB::ApiType ClassDB::get_api_type(const StringName &p_class) const {
-	return (ApiType)::ClassDB::get_api_type(p_class);
+	::ClassDB::APIType api_type = ::ClassDB::get_api_type(p_class);
+	return (ApiType)api_type;
 }
 
 Variant ClassDB::instantiate(const StringName &p_class) const {
@@ -1561,13 +1562,14 @@ void ClassDB::get_argument_options(const StringName &p_function, int p_idx, List
 #endif
 
 void ClassDB::_bind_methods() {
+	::ClassDB::bind_method(D_METHOD("get_api_type", "class"), &ClassDB::get_api_type);
 	::ClassDB::bind_method(D_METHOD("get_class_list"), &ClassDB::get_class_list);
 	::ClassDB::bind_method(D_METHOD("get_inheriters_from_class", "class"), &ClassDB::get_inheriters_from_class);
 	::ClassDB::bind_method(D_METHOD("get_parent_class", "class"), &ClassDB::get_parent_class);
 	::ClassDB::bind_method(D_METHOD("class_exists", "class"), &ClassDB::class_exists);
 	::ClassDB::bind_method(D_METHOD("is_parent_class", "class", "inherits"), &ClassDB::is_parent_class);
 	::ClassDB::bind_method(D_METHOD("can_instantiate", "class"), &ClassDB::can_instantiate);
-	::ClassDB::bind_method(D_METHOD("get_api_type", "class"), &ClassDB::get_api_type);
+
 	::ClassDB::bind_method(D_METHOD("instantiate", "class"), &ClassDB::instantiate);
 
 	::ClassDB::bind_method(D_METHOD("class_has_signal", "class", "signal"), &ClassDB::class_has_signal);
