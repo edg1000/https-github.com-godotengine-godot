@@ -34,6 +34,7 @@
 #include "editor/editor_plugin.h"
 #include "editor/editor_properties.h"
 #include "editor/plugins/editor_resource_conversion_plugin.h"
+#include "scene/animation/tween.h"
 #include "scene/gui/graph_edit.h"
 #include "scene/resources/syntax_highlighter.h"
 #include "scene/resources/visual_shader.h"
@@ -64,6 +65,36 @@ protected:
 public:
 	void set_editor(VisualShaderEditor *p_editor);
 	virtual Control *create_editor(const Ref<Resource> &p_parent_resource, const Ref<VisualShaderNode> &p_node);
+};
+
+class VSGraphNode : public GraphNode {
+	GDCLASS(VSGraphNode, GraphNode);
+
+protected:
+	void _draw_port(int p_slot_index, Point2i p_pos, bool p_left, const Color &p_color, const Color &p_rim_color);
+	virtual void draw_port(int p_slot_index, Point2i p_pos, bool p_left, const Color &p_color) override;
+};
+
+class VSRerouteNode : public VSGraphNode {
+	GDCLASS(VSRerouteNode, GraphNode);
+
+	float icon_opacity = 0.0;
+
+	const float ANIMATION_LENGTH_SEC = 0.5;
+
+protected:
+	static void _bind_methods();
+	void _notification(int p_what);
+
+	virtual void draw_port(int p_slot_index, Point2i p_pos, bool p_left, const Color &p_color) override;
+
+public:
+	VSRerouteNode();
+	void set_icon_opacity(float p_opacity);
+	float get_icon_opacity() const;
+
+	void _on_mouse_entered();
+	void _on_mouse_exited();
 };
 
 class VisualShaderGraphPlugin : public RefCounted {

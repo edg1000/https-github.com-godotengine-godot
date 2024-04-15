@@ -1128,7 +1128,9 @@ bool VisualShader::can_connect_nodes(Type p_type, int p_from_node, int p_from_po
 	VisualShaderNode::PortType from_port_type = g->nodes[p_from_node].node->get_output_port_type(p_from_port);
 	VisualShaderNode::PortType to_port_type = g->nodes[p_to_node].node->get_input_port_type(p_to_port);
 
-	if (!is_port_types_compatible(from_port_type, to_port_type)) {
+	Ref<VisualShaderNodeReroute> to_node_reroute = g->nodes[p_to_node].node;
+
+	if ((to_node_reroute.is_null() || to_node_reroute->is_output_port_connected(0)) && !is_port_types_compatible(from_port_type, to_port_type)) {
 		return false;
 	}
 
@@ -1141,7 +1143,6 @@ bool VisualShader::can_connect_nodes(Type p_type, int p_from_node, int p_from_po
 	if (is_nodes_connected_relatively(g, p_from_node, p_to_node)) {
 		return false;
 	}
-
 	return true;
 }
 
@@ -1218,9 +1219,21 @@ Error VisualShader::connect_nodes(Type p_type, int p_from_node, int p_from_port,
 	ERR_FAIL_INDEX_V(p_to_port, g->nodes[p_to_node].node->get_input_port_count(), ERR_INVALID_PARAMETER);
 
 	VisualShaderNode::PortType from_port_type = g->nodes[p_from_node].node->get_output_port_type(p_from_port);
+	// Set the reroute node type if it's a reroute node.
+	Ref<VisualShaderNodeReroute> to_node_reroute = g->nodes[p_to_node].node;
+	if (to_node_reroute.is_valid()) {
+		to_node_reroute->set_port_type(from_port_type);
+	}
 	VisualShaderNode::PortType to_port_type = g->nodes[p_to_node].node->get_input_port_type(p_to_port);
 
-	ERR_FAIL_COND_V_MSG(!is_port_types_compatible(from_port_type, to_port_type), ERR_INVALID_PARAMETER, "Incompatible port types (scalar/vec/bool) with transform.");
+	// Allow connection with incompatible port types only if the reroute node isn't connected to anything.
+	// TODO: Recursive search for connected reroute nodes.
+	bool port_types_are_compatible = is_port_types_compatible(from_port_type, to_port_type);
+	if (to_node_reroute.is_valid() && !to_node_reroute->is_output_port_connected(0)) {
+		port_types_are_compatible = true;
+	}
+
+	ERR_FAIL_COND_V_MSG(!port_types_are_compatible, ERR_INVALID_PARAMETER, "Incompatible port types.");
 
 	for (const Connection &E : g->connections) {
 		if (E.from_node == p_from_node && E.from_port == p_from_port && E.to_node == p_to_node && E.to_port == p_to_port) {
