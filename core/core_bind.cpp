@@ -1372,6 +1372,10 @@ bool ClassDB::can_instantiate(const StringName &p_class) const {
 	return ::ClassDB::can_instantiate(p_class);
 }
 
+ClassDB::APIType ClassDB::get_api_type(const StringName &p_class) const {
+    return (APIType)::ClassDB::get_api_type(p_class);
+}
+
 Variant ClassDB::instantiate(const StringName &p_class) const {
 	Object *obj = ::ClassDB::instantiate(p_class);
 	if (!obj) {
@@ -1563,6 +1567,7 @@ void ClassDB::_bind_methods() {
 	::ClassDB::bind_method(D_METHOD("class_exists", "class"), &ClassDB::class_exists);
 	::ClassDB::bind_method(D_METHOD("is_parent_class", "class", "inherits"), &ClassDB::is_parent_class);
 	::ClassDB::bind_method(D_METHOD("can_instantiate", "class"), &ClassDB::can_instantiate);
+	::ClassDB::bind_method(D_METHOD("get_api_type", "class"), &ClassDB::get_api_type);
 	::ClassDB::bind_method(D_METHOD("instantiate", "class"), &ClassDB::instantiate);
 
 	::ClassDB::bind_method(D_METHOD("class_has_signal", "class", "signal"), &ClassDB::class_has_signal);
