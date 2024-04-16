@@ -159,10 +159,10 @@
 			</description>
 		</method>
 		<method name="get_api_type" qualifiers="const">
-			<return type="int" enum="ClassDB.ApiType" />
+			<return type="int" enum="ClassDB.APIType" />
 			<param index="0" name="class" type="StringName" />
 			<description>
-				Returns the api type of [param class].See [enum ApiType]
+				Returns the api type of [param class].See [enum APIType]
 			</description>
 		</method>
 		<method name="get_class_list" qualifiers="const">
@@ -209,19 +209,19 @@
 		</method>
 	</methods>
 	<constants>
-		<constant name="API_CORE" value="0" enum="ApiType">
+		<constant name="API_CORE" value="0" enum="APIType">
 			Native core classes type.
 		</constant>
-		<constant name="API_EDITOR" value="1" enum="ApiType">
+		<constant name="API_EDITOR" value="1" enum="APIType">
 			Native editor classes type.
 		</constant>
-		<constant name="API_EXTENSION" value="2" enum="ApiType">
+		<constant name="API_EXTENSION" value="2" enum="APIType">
 			GDExtension classes type.
 		</constant>
-		<constant name="API_EDITOR_EXTENSION" value="3" enum="ApiType">
+		<constant name="API_EDITOR_EXTENSION" value="3" enum="APIType">
 			GDExtension editor classes type.
 		</constant>
-		<constant name="API_NONE" value="4" enum="ApiType">
+		<constant name="API_NONE" value="4" enum="APIType">
 			Unknown classes type.
 		</constant>
 	</constants>

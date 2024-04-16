@@ -1372,9 +1372,9 @@ bool ClassDB::can_instantiate(const StringName &p_class) const {
 	return ::ClassDB::can_instantiate(p_class);
 }
 
-ClassDB::ApiType ClassDB::get_api_type(const StringName &p_class) const {
+ClassDB::APIType ClassDB::get_api_type(const StringName &p_class) const {
 	::ClassDB::APIType api_type = ::ClassDB::get_api_type(p_class);
-	return (ApiType)api_type;
+	return (APIType)api_type;
 }
 
 Variant ClassDB::instantiate(const StringName &p_class) const {
