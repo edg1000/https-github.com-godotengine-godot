@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  godot_core_mbedtls_config.h                                           */
+/*  engine_update_label.h                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,33 +28,80 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_CORE_MBEDTLS_CONFIG_H
-#define GODOT_CORE_MBEDTLS_CONFIG_H
+#ifndef ENGINE_UPDATE_LABEL_H
+#define ENGINE_UPDATE_LABEL_H
 
-#include <limits.h>
+#include "scene/gui/link_button.h"
 
-// For AES
-#define MBEDTLS_CIPHER_MODE_CBC
-#define MBEDTLS_CIPHER_MODE_CFB
-#define MBEDTLS_CIPHER_MODE_CTR
-#define MBEDTLS_CIPHER_MODE_OFB
-#define MBEDTLS_CIPHER_MODE_XTS
+class HTTPRequest;
 
-#define MBEDTLS_AES_C
-#define MBEDTLS_BASE64_C
-#define MBEDTLS_CTR_DRBG_C
-#define MBEDTLS_ENTROPY_C
-#define MBEDTLS_MD5_C
-#define MBEDTLS_SHA1_C
-#define MBEDTLS_SHA256_C
-#define MBEDTLS_PLATFORM_ZEROIZE_ALT
-#define MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES
+class EngineUpdateLabel : public LinkButton {
+	GDCLASS(EngineUpdateLabel, LinkButton);
 
-// This is only to pass a check in the mbedtls check_config.h header, none of
-// the files we include as part of the core build uses it anyway, we already
-// define MBEDTLS_PLATFORM_ZEROIZE_ALT which is the only relevant function.
-#if defined(__MINGW32__)
-#define MBEDTLS_PLATFORM_C
-#endif
+public:
+	enum class UpdateMode {
+		DISABLED,
+		NEWEST_UNSTABLE,
+		NEWEST_STABLE,
+		NEWEST_PATCH,
+	};
 
-#endif // GODOT_CORE_MBEDTLS_CONFIG_H
+private:
+	static constexpr int DEV_VERSION = 9999; // Version index for unnumbered builds (assumed to always be newest).
+
+	enum class VersionType {
+		STABLE,
+		RC,
+		BETA,
+		ALPHA,
+		DEV,
+		UNKNOWN,
+	};
+
+	enum class UpdateStatus {
+		NONE,
+		DEV,
+		OFFLINE,
+		BUSY,
+		ERROR,
+		UPDATE_AVAILABLE,
+		UP_TO_DATE,
+	};
+
+	struct ThemeCache {
+		Color default_color;
+		Color disabled_color;
+		Color error_color;
+		Color update_color;
+	} theme_cache;
+
+	HTTPRequest *http = nullptr;
+	bool compact_mode = false;
+
+	UpdateStatus status = UpdateStatus::NONE;
+	bool checked_update = false;
+	String found_version;
+
+	bool _can_check_updates() const;
+	void _check_update();
+	void _http_request_completed(int p_result, int p_response_code, const PackedStringArray &p_headers, const PackedByteArray &p_body);
+
+	void _set_message(const String &p_message, const Color &p_color);
+	void _set_status(UpdateStatus p_status);
+
+	VersionType _get_version_type(const String &p_string, int *r_index) const;
+	String _extract_sub_string(const String &p_line) const;
+
+protected:
+	void _notification(int p_what);
+	static void _bind_methods();
+
+	virtual void pressed() override;
+
+public:
+	void enable_compact_mode();
+
+	EngineUpdateLabel();
+};
+
+#endif // ENGINE_UPDATE_LABEL_H
