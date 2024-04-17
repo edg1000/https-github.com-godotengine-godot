@@ -30,8 +30,11 @@
 
 #include "camera_3d_editor_plugin.h"
 
+#include "core/config/project_settings.h"
 #include "editor/editor_node.h"
 #include "node_3d_editor_plugin.h"
+#include "scene/gui/texture_rect.h"
+#include "scene/main/viewport.h"
 
 void Camera3DEditor::_node_removed(Node *p_node) {
 	if (p_node == node) {
@@ -79,9 +82,53 @@ Camera3DEditor::Camera3DEditor() {
 	preview->connect("pressed", callable_mp(this, &Camera3DEditor::_pressed));
 }
 
+static Size2i _get_viewport_size(Camera3D *p_camera) {
+	Viewport *viewport = p_camera->get_viewport();
+
+	Window *window = Object::cast_to<Window>(viewport);
+	if (window) {
+		return window->get_size();
+	}
+
+	SubViewport *sub_viewport = Object::cast_to<SubViewport>(viewport);
+	ERR_FAIL_NULL_V(sub_viewport, Size2i());
+
+	if (sub_viewport == EditorNode::get_singleton()->get_scene_root()) {
+		return Size2(GLOBAL_GET("display/window/size/viewport_width"), GLOBAL_GET("display/window/size/viewport_height"));
+	}
+
+	return sub_viewport->get_size();
+}
+
+void Camera3DPreview::_update_sub_viewport_size() {
+	sub_viewport->set_size(_get_viewport_size(camera));
+}
+
+Camera3DPreview::Camera3DPreview(Camera3D *p_camera) :
+		TexturePreview(nullptr, false), camera(p_camera), sub_viewport(memnew(SubViewport)) {
+	RenderingServer::get_singleton()->viewport_attach_camera(sub_viewport->get_viewport_rid(), camera->get_camera());
+	add_child(sub_viewport);
+
+	TextureRect *display = get_texture_display();
+	display->set_texture(sub_viewport->get_texture());
+	sub_viewport->connect("size_changed", callable_mp((CanvasItem *)display, &CanvasItem::queue_redraw));
+
+	ProjectSettings::get_singleton()->connect("settings_changed", callable_mp(this, &Camera3DPreview::_update_sub_viewport_size));
+	_update_sub_viewport_size();
+}
+
+bool EditorInspectorPluginCamera3DPreview::can_handle(Object *p_object) {
+	return Object::cast_to<Camera3D>(p_object) != nullptr;
+}
+
+void EditorInspectorPluginCamera3DPreview::parse_begin(Object *p_object) {
+	Camera3D *camera = Object::cast_to<Camera3D>(p_object);
+	Camera3DPreview *preview = memnew(Camera3DPreview(camera));
+	add_custom_control(preview);
+}
+
 void Camera3DEditorPlugin::edit(Object *p_object) {
 	Node3DEditor::get_singleton()->set_can_preview(Object::cast_to<Camera3D>(p_object));
-	//camera_editor->edit(Object::cast_to<Node>(p_object));
 }
 
 bool Camera3DEditorPlugin::handles(Object *p_object) const {
@@ -89,27 +136,15 @@ bool Camera3DEditorPlugin::handles(Object *p_object) const {
 }
 
 void Camera3DEditorPlugin::make_visible(bool p_visible) {
-	if (p_visible) {
-		//Node3DEditor::get_singleton()->set_can_preview(Object::cast_to<Camera3D>(p_object));
-	} else {
+	if (!p_visible) {
 		Node3DEditor::get_singleton()->set_can_preview(nullptr);
 	}
 }
 
 Camera3DEditorPlugin::Camera3DEditorPlugin() {
-	/*	camera_editor = memnew( CameraEditor );
-	EditorNode::get_singleton()->get_main_screen_control()->add_child(camera_editor);
-
-	camera_editor->set_anchor(SIDE_LEFT,Control::ANCHOR_END);
-	camera_editor->set_anchor(SIDE_RIGHT,Control::ANCHOR_END);
-	camera_editor->set_offset(SIDE_LEFT,60);
-	camera_editor->set_offset(SIDE_RIGHT,0);
-	camera_editor->set_offset(SIDE_TOP,0);
-	camera_editor->set_offset(SIDE_BOTTOM,10);
-
-
-	camera_editor->hide();
-*/
+	Ref<EditorInspectorPluginCamera3DPreview> plugin;
+	plugin.instantiate();
+	add_inspector_plugin(plugin);
 }
 
 Camera3DEditorPlugin::~Camera3DEditorPlugin() {
