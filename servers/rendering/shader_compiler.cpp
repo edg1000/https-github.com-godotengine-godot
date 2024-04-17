@@ -1107,7 +1107,11 @@ String ShaderCompiler::_dump_node_code(const SL::Node *p_node, int p_level, Gene
 					} else {
 						code += "";
 					}
-					code += _dump_node_code(cnode->array_declarations[0].initializer[i], p_level, r_gen_code, p_actions, p_default_actions, p_assigning);
+					if (cnode->array_declarations[0].initializer.size() < i + 1) {
+						code += "";
+					} else {
+						code += _dump_node_code(cnode->array_declarations[0].initializer[i], p_level, r_gen_code, p_actions, p_default_actions, p_assigning);
+					}
 				}
 				code += ")";
 			}
