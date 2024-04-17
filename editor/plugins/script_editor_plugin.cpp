@@ -1767,6 +1767,48 @@ void ScriptEditor::notify_script_changed(const Ref<Script> &p_script) {
 	emit_signal(SNAME("editor_script_changed"), p_script);
 }
 
+Vector<String> ScriptEditor::_get_breakpoints() {
+	Vector<String> ret;
+	HashSet<String> loaded_scripts;
+	for (int i = 0; i < tab_container->get_tab_count(); i++) {
+		ScriptEditorBase *se = Object::cast_to<ScriptEditorBase>(tab_container->get_tab_control(i));
+		if (!se) {
+			continue;
+		}
+
+		Ref<Script> scr = se->get_edited_resource();
+		if (scr == nullptr) {
+			continue;
+		}
+
+		String base = scr->get_path();
+		loaded_scripts.insert(base);
+		if (base.begins_with("local://") || base.is_empty()) {
+			continue;
+		}
+
+		PackedInt32Array bpoints = se->get_breakpoints();
+		for (int j = 0; j < bpoints.size(); j++) {
+			ret.push_back(base + ":" + itos((int)bpoints[j] + 1));
+		}
+	}
+
+	// Load breakpoints that are in closed scripts.
+	List<String> cached_editors;
+	script_editor_cache->get_sections(&cached_editors);
+	for (const String &E : cached_editors) {
+		if (loaded_scripts.has(E)) {
+			continue;
+		}
+
+		Array breakpoints = _get_cached_breakpoints_for_script(E);
+		for (int i = 0; i < breakpoints.size(); i++) {
+			ret.push_back(E + ":" + itos((int)breakpoints[i] + 1));
+		}
+	}
+	return ret;
+}
+
 void ScriptEditor::get_breakpoints(List<String> *p_breakpoints) {
 	HashSet<String> loaded_scripts;
 	for (int i = 0; i < tab_container->get_tab_count(); i++) {
@@ -3877,6 +3919,7 @@ void ScriptEditor::_bind_methods() {
 	ClassDB::bind_method("_help_tab_goto", &ScriptEditor::_help_tab_goto);
 	ClassDB::bind_method("get_current_editor", &ScriptEditor::_get_current_editor);
 	ClassDB::bind_method("get_open_script_editors", &ScriptEditor::_get_open_script_editors);
+	ClassDB::bind_method("get_breakpoints", &ScriptEditor::_get_breakpoints);
 
 	ClassDB::bind_method(D_METHOD("register_syntax_highlighter", "syntax_highlighter"), &ScriptEditor::register_syntax_highlighter);
 	ClassDB::bind_method(D_METHOD("unregister_syntax_highlighter", "syntax_highlighter"), &ScriptEditor::unregister_syntax_highlighter);
