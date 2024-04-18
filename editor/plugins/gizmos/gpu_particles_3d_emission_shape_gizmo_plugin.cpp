@@ -313,19 +313,12 @@ void GPUParticles3DEmissionShapeGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) 
 
 			Vector<Vector3> points;
 
-			// TODO: This is currently broken and needs to be fixed!
 			Basis basis = Basis();
 			basis.rows[1] = ring_axis.normalized();
-
 			basis.rows[0] = (Vector3(basis[1][1], -basis[1][2], -basis[1][0])).normalized();
 			basis.rows[0] = (basis[0] - basis[0].dot(basis[1]) * basis[1]).normalized();
 			basis[2] = (basis[0].cross(basis[1])).normalized();
-/*			if (basis.rows[1].is_equal_approx(Vector3(0.0, 0.0, 1.0))) {
-				basis.rows[0] = Vector3(1.0, 0.0, 0.0).cross(basis.rows[1]).normalized();
-			} else {
-				basis.rows[0] = basis.rows[1].cross(Vector3(0.0, 0.0, 1.0)).normalized();
-			}
-			basis.rows[2] = (basis.rows[0].cross(basis.rows[1])).normalized();*/
+			basis = basis.inverse();
 
 			for (int i = 0; i <= 360; i++) {
 				float ra = Math::deg_to_rad((float)i);
