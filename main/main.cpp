@@ -3912,7 +3912,6 @@ bool Main::is_iterating() {
 // For performance metrics.
 static uint64_t physics_process_max = 0;
 static uint64_t process_max = 0;
-static uint64_t navigation_process_max = 0;
 
 // Return false means iterating further, returning true means `OS::run`
 // will terminate the program. In case of failure, the OS exit code needs
@@ -3941,7 +3940,6 @@ bool Main::iteration() {
 
 	uint64_t physics_process_ticks = 0;
 	uint64_t process_ticks = 0;
-	uint64_t navigation_process_ticks = 0;
 
 	frame += ticks_elapsed;
 
@@ -3995,12 +3993,8 @@ bool Main::iteration() {
 			break;
 		}
 
-		uint64_t navigation_begin = OS::get_singleton()->get_ticks_usec();
-
-		NavigationServer3D::get_singleton()->process(physics_step * time_scale);
-
-		navigation_process_ticks = MAX(navigation_process_ticks, OS::get_singleton()->get_ticks_usec() - navigation_begin); // keep the largest one for reference
-		navigation_process_max = MAX(OS::get_singleton()->get_ticks_usec() - navigation_begin, navigation_process_max);
+		NavigationServer2D::get_singleton()->physics_process(physics_step * time_scale);
+		NavigationServer3D::get_singleton()->physics_process(physics_step * time_scale);
 
 		message_queue->flush();
 
@@ -4030,6 +4024,12 @@ bool Main::iteration() {
 	if (OS::get_singleton()->get_main_loop()->process(process_step * time_scale)) {
 		exit = true;
 	}
+
+	{
+		NavigationServer2D::get_singleton()->process(process_step * time_scale);
+		NavigationServer3D::get_singleton()->process(process_step * time_scale);
+	}
+
 	message_queue->flush();
 
 	RenderingServer::get_singleton()->sync(); //sync if still drawing from previous frames.
@@ -4082,10 +4082,8 @@ bool Main::iteration() {
 		Engine::get_singleton()->_fps = frames;
 		performance->set_process_time(USEC_TO_SEC(process_max));
 		performance->set_physics_process_time(USEC_TO_SEC(physics_process_max));
-		performance->set_navigation_process_time(USEC_TO_SEC(navigation_process_max));
 		process_max = 0;
 		physics_process_max = 0;
-		navigation_process_max = 0;
 
 		frame %= 1000000;
 		frames = 0;

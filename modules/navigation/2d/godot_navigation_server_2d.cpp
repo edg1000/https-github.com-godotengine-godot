@@ -171,6 +171,10 @@ void GodotNavigationServer2D::init() {
 #endif // CLIPPER2_ENABLED
 }
 
+void GodotNavigationServer2D::process(real_t p_delta_time) {}
+
+void GodotNavigationServer2D::physics_process(real_t p_delta_time) {}
+
 void GodotNavigationServer2D::sync() {
 #ifdef CLIPPER2_ENABLED
 	if (navmesh_generator_2d) {
@@ -238,18 +242,13 @@ GodotNavigationServer2D::GodotNavigationServer2D() {}
 GodotNavigationServer2D::~GodotNavigationServer2D() {}
 
 TypedArray<RID> FORWARD_0_C(get_maps);
+TypedArray<RID> FORWARD_0_C(get_avoidance_spaces);
 
 TypedArray<RID> FORWARD_1_C(map_get_links, RID, p_map, rid_to_rid);
 
 TypedArray<RID> FORWARD_1_C(map_get_regions, RID, p_map, rid_to_rid);
 
-TypedArray<RID> FORWARD_1_C(map_get_agents, RID, p_map, rid_to_rid);
-
-TypedArray<RID> FORWARD_1_C(map_get_obstacles, RID, p_map, rid_to_rid);
-
 RID FORWARD_1_C(region_get_map, RID, p_region, rid_to_rid);
-
-RID FORWARD_1_C(agent_get_map, RID, p_agent, rid_to_rid);
 
 RID FORWARD_0(map_create);
 
@@ -351,7 +350,6 @@ RID GodotNavigationServer2D::agent_create() {
 
 void FORWARD_2(agent_set_avoidance_enabled, RID, p_agent, bool, p_enabled, rid_to_rid, bool_to_bool);
 bool FORWARD_1_C(agent_get_avoidance_enabled, RID, p_agent, rid_to_rid);
-void FORWARD_2(agent_set_map, RID, p_agent, RID, p_map, rid_to_rid, rid_to_rid);
 void FORWARD_2(agent_set_neighbor_distance, RID, p_agent, real_t, p_dist, rid_to_rid, real_to_real);
 real_t GodotNavigationServer2D::agent_get_neighbor_distance(RID p_agent) const {
 	return NavigationServer3D::get_singleton()->agent_get_neighbor_distance(p_agent);
@@ -385,7 +383,7 @@ void FORWARD_2(agent_set_position, RID, p_agent, Vector2, p_position, rid_to_rid
 Vector2 GodotNavigationServer2D::agent_get_position(RID p_agent) const {
 	return v3_to_v2(NavigationServer3D::get_singleton()->agent_get_position(p_agent));
 }
-bool FORWARD_1_C(agent_is_map_changed, RID, p_agent, rid_to_rid);
+
 void FORWARD_2(agent_set_paused, RID, p_agent, bool, p_paused, rid_to_rid, bool_to_bool);
 bool FORWARD_1_C(agent_get_paused, RID, p_agent, rid_to_rid);
 
@@ -416,6 +414,12 @@ void FORWARD_2(agent_set_avoidance_priority, RID, p_agent, real_t, p_priority, r
 real_t GodotNavigationServer2D::agent_get_avoidance_priority(RID p_agent) const {
 	return NavigationServer3D::get_singleton()->agent_get_avoidance_priority(p_agent);
 }
+void GodotNavigationServer2D::agent_set_avoidance_space(RID p_agent, RID p_avoidance_space) {
+	NavigationServer3D::get_singleton()->agent_set_avoidance_space(p_agent, p_avoidance_space);
+}
+RID GodotNavigationServer2D::agent_get_avoidance_space(RID p_agent) const {
+	return NavigationServer3D::get_singleton()->agent_get_avoidance_space(p_agent);
+}
 
 RID GodotNavigationServer2D::obstacle_create() {
 	RID obstacle = NavigationServer3D::get_singleton()->obstacle_create();
@@ -423,8 +427,6 @@ RID GodotNavigationServer2D::obstacle_create() {
 }
 void FORWARD_2(obstacle_set_avoidance_enabled, RID, p_obstacle, bool, p_enabled, rid_to_rid, bool_to_bool);
 bool FORWARD_1_C(obstacle_get_avoidance_enabled, RID, p_obstacle, rid_to_rid);
-void FORWARD_2(obstacle_set_map, RID, p_obstacle, RID, p_map, rid_to_rid, rid_to_rid);
-RID FORWARD_1_C(obstacle_get_map, RID, p_obstacle, rid_to_rid);
 void FORWARD_2(obstacle_set_paused, RID, p_obstacle, bool, p_paused, rid_to_rid, bool_to_bool);
 bool FORWARD_1_C(obstacle_get_paused, RID, p_obstacle, rid_to_rid);
 void FORWARD_2(obstacle_set_radius, RID, p_obstacle, real_t, p_radius, rid_to_rid, real_to_real);
@@ -449,6 +451,78 @@ void GodotNavigationServer2D::obstacle_set_vertices(RID p_obstacle, const Vector
 }
 Vector<Vector2> GodotNavigationServer2D::obstacle_get_vertices(RID p_obstacle) const {
 	return vector_v3_to_v2(NavigationServer3D::get_singleton()->obstacle_get_vertices(p_obstacle));
+}
+
+void GodotNavigationServer2D::obstacle_set_avoidance_space(RID p_obstacle, RID p_avoidance_space) {
+	NavigationServer3D::get_singleton()->obstacle_set_avoidance_space(p_obstacle, p_avoidance_space);
+}
+RID GodotNavigationServer2D::obstacle_get_avoidance_space(RID p_obstacle) const {
+	return NavigationServer3D::get_singleton()->obstacle_get_avoidance_space(p_obstacle);
+}
+
+RID GodotNavigationServer2D::avoidance_space_create() {
+	return NavigationServer3D::get_singleton()->avoidance_space_create();
+}
+
+uint32_t GodotNavigationServer2D::avoidance_space_get_iteration_id(RID p_avoidance_space) const {
+	return NavigationServer3D::get_singleton()->avoidance_space_get_iteration_id(p_avoidance_space);
+}
+
+void GodotNavigationServer2D::avoidance_space_set_active(RID p_avoidance_space, bool p_active) {
+	NavigationServer3D::get_singleton()->avoidance_space_set_active(p_avoidance_space, p_active);
+}
+
+bool GodotNavigationServer2D::avoidance_space_is_active(RID p_avoidance_space) const {
+	return NavigationServer3D::get_singleton()->avoidance_space_is_active(p_avoidance_space);
+}
+
+void GodotNavigationServer2D::avoidance_space_set_process_mode(RID p_avoidance_space, GodotNavigationServer2D::AvoidanceProcessMode p_process_mode) {
+	switch (p_process_mode) {
+		case AVOIDANCE_PROCESS_MANUAL: {
+			NavigationServer3D::get_singleton()->avoidance_space_set_process_mode(p_avoidance_space, NavigationServer3D::AVOIDANCE_PROCESS_MANUAL);
+		} break;
+		case AVOIDANCE_PROCESS_PHYSICS: {
+			NavigationServer3D::get_singleton()->avoidance_space_set_process_mode(p_avoidance_space, NavigationServer3D::AVOIDANCE_PROCESS_PHYSICS);
+		} break;
+		case AVOIDANCE_PROCESS_FRAME: {
+			NavigationServer3D::get_singleton()->avoidance_space_set_process_mode(p_avoidance_space, NavigationServer3D::AVOIDANCE_PROCESS_FRAME);
+		} break;
+		default: {
+			WARN_PRINT_ONCE("No match for used AvoidanceProcessMode - fallback to default");
+			NavigationServer3D::get_singleton()->avoidance_space_set_process_mode(p_avoidance_space, NavigationServer3D::AVOIDANCE_PROCESS_PHYSICS);
+		} break;
+	}
+};
+
+GodotNavigationServer2D::AvoidanceProcessMode GodotNavigationServer2D::avoidance_space_get_process_mode(RID p_avoidance_space) const {
+	NavigationServer3D::AvoidanceProcessMode process_mode = NavigationServer3D::get_singleton()->avoidance_space_get_process_mode(p_avoidance_space);
+	switch (process_mode) {
+		case NavigationServer3D::AVOIDANCE_PROCESS_MANUAL: {
+			return NavigationServer2D::AVOIDANCE_PROCESS_MANUAL;
+		} break;
+		case NavigationServer3D::AVOIDANCE_PROCESS_PHYSICS: {
+			return NavigationServer2D::AVOIDANCE_PROCESS_PHYSICS;
+		} break;
+		case NavigationServer3D::AVOIDANCE_PROCESS_FRAME: {
+			return NavigationServer2D::AVOIDANCE_PROCESS_FRAME;
+		} break;
+		default: {
+			WARN_PRINT_ONCE("No match for used AvoidanceProcessMode - fallback to default");
+			return NavigationServer2D::AVOIDANCE_PROCESS_PHYSICS;
+		} break;
+	}
+};
+
+void GodotNavigationServer2D::avoidance_space_step_manual(RID p_avoidance_space, real_t p_step) {
+	NavigationServer3D::get_singleton()->avoidance_space_step_manual(p_avoidance_space, p_step);
+};
+
+TypedArray<RID> GodotNavigationServer2D::avoidance_space_get_agents(RID p_avoidance_space) const {
+	return NavigationServer3D::get_singleton()->avoidance_space_get_agents(p_avoidance_space);
+}
+
+TypedArray<RID> GodotNavigationServer2D::avoidance_space_get_obstacles(RID p_avoidance_space) const {
+	return NavigationServer3D::get_singleton()->avoidance_space_get_obstacles(p_avoidance_space);
 }
 
 void GodotNavigationServer2D::query_path(const Ref<NavigationPathQueryParameters2D> &p_query_parameters, Ref<NavigationPathQueryResult2D> p_query_result) const {
@@ -479,3 +553,15 @@ void GodotNavigationServer2D::source_geometry_parser_set_callback(RID p_parser, 
 	}
 #endif // CLIPPER2_ENABLED
 }
+
+#ifndef DISABLE_DEPRECATED
+TypedArray<RID> FORWARD_1_C(map_get_agents, RID, p_map, rid_to_rid);
+TypedArray<RID> FORWARD_1_C(map_get_obstacles, RID, p_map, rid_to_rid);
+
+void FORWARD_2(agent_set_map, RID, p_agent, RID, p_map, rid_to_rid, rid_to_rid);
+RID FORWARD_1_C(agent_get_map, RID, p_agent, rid_to_rid);
+bool FORWARD_1_C(agent_is_map_changed, RID, p_agent, rid_to_rid);
+
+void FORWARD_2(obstacle_set_map, RID, p_obstacle, RID, p_map, rid_to_rid, rid_to_rid);
+RID FORWARD_1_C(obstacle_get_map, RID, p_obstacle, rid_to_rid);
+#endif // DISABLE_DEPRECATED
