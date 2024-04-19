@@ -431,12 +431,20 @@ protected:
 	static void _bind_methods();
 
 public:
+	enum APIType {
+		API_CORE,
+		API_EDITOR,
+		API_EXTENSION,
+		API_EDITOR_EXTENSION,
+		API_NONE
+	};
 	PackedStringArray get_class_list() const;
 	PackedStringArray get_inheriters_from_class(const StringName &p_class) const;
 	StringName get_parent_class(const StringName &p_class) const;
 	bool class_exists(const StringName &p_class) const;
 	bool is_parent_class(const StringName &p_class, const StringName &p_inherits) const;
 	bool can_instantiate(const StringName &p_class) const;
+	APIType get_api_type(const StringName &p_class) const;
 	Variant instantiate(const StringName &p_class) const;
 
 	bool class_has_signal(const StringName &p_class, const StringName &p_signal) const;
@@ -594,5 +602,7 @@ VARIANT_ENUM_CAST(core_bind::Geometry2D::PolyJoinType);
 VARIANT_ENUM_CAST(core_bind::Geometry2D::PolyEndType);
 
 VARIANT_ENUM_CAST(core_bind::Thread::Priority);
+
+VARIANT_ENUM_CAST(core_bind::special::ClassDB::APIType);
 
 #endif // CORE_BIND_H
