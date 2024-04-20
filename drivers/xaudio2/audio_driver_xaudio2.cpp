@@ -37,18 +37,16 @@ Error AudioDriverXAudio2::init() {
 	active.clear();
 	exit_thread.clear();
 	pcm_open = false;
-	samples_in = nullptr;
 
 	mix_rate = _get_configured_mix_rate();
 
-	// FIXME: speaker_mode seems unused in the Xaudio2 driver so far
-	speaker_mode = SPEAKER_MODE_STEREO;
+	// TODO: `channels` and `buffer_format` are hardcoded.
 	channels = 2;
+	buffer_format = BUFFER_FORMAT_INTEGER_16;
 
 	int latency = Engine::get_singleton()->get_audio_output_latency();
 	buffer_size = closest_power_of_2(latency * mix_rate / 1000);
 
-	samples_in = memnew_arr(int32_t, buffer_size * channels);
 	for (int i = 0; i < AUDIO_BUFFERS; i++) {
 		samples_out[i] = memnew_arr(int16_t, buffer_size * channels);
 		xaudio_buffer[i].AudioBytes = buffer_size * channels * sizeof(int16_t);
@@ -92,14 +90,10 @@ void AudioDriverXAudio2::thread_func(void *p_udata) {
 			ad->lock();
 			ad->start_counting_ticks();
 
-			ad->audio_server_process(ad->buffer_size, ad->samples_in);
+			ad->audio_server_process(ad->buffer_size, ad->samples_out[ad->current_buffer]);
 
 			ad->stop_counting_ticks();
 			ad->unlock();
-
-			for (unsigned int i = 0; i < ad->buffer_size * ad->channels; i++) {
-				ad->samples_out[ad->current_buffer][i] = ad->samples_in[i] >> 16;
-			}
 
 			ad->xaudio_buffer[ad->current_buffer].Flags = 0;
 			ad->xaudio_buffer[ad->current_buffer].AudioBytes = ad->buffer_size * ad->channels * sizeof(int16_t);
@@ -127,10 +121,6 @@ int AudioDriverXAudio2::get_mix_rate() const {
 	return mix_rate;
 }
 
-AudioDriver::SpeakerMode AudioDriverXAudio2::get_speaker_mode() const {
-	return speaker_mode;
-}
-
 float AudioDriverXAudio2::get_latency() {
 	XAUDIO2_PERFORMANCE_DATA perf_data;
 	xaudio->GetPerformanceData(&perf_data);
@@ -139,6 +129,14 @@ float AudioDriverXAudio2::get_latency() {
 	} else {
 		return 0;
 	}
+}
+
+int AudioDriverXAudio2::get_output_channels() const {
+	return channels;
+}
+
+AudioDriver::BufferFormat AudioDriverXAudio2::get_output_buffer_format() const {
+	return buffer_format;
 }
 
 void AudioDriverXAudio2::lock() {
@@ -160,9 +158,6 @@ void AudioDriverXAudio2::finish() {
 		source_voice->DestroyVoice();
 	}
 
-	if (samples_in) {
-		memdelete_arr(samples_in);
-	}
 	if (samples_out[0]) {
 		for (int i = 0; i < AUDIO_BUFFERS; i++) {
 			memdelete_arr(samples_out[i]);

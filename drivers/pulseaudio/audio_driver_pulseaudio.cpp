@@ -71,7 +71,7 @@ void AudioDriverPulseAudio::pa_state_cb(pa_context *c, void *userdata) {
 void AudioDriverPulseAudio::pa_sink_info_cb(pa_context *c, const pa_sink_info *l, int eol, void *userdata) {
 	AudioDriverPulseAudio *ad = static_cast<AudioDriverPulseAudio *>(userdata);
 
-	// If eol is set to a positive number, you're at the end of the list
+	// If eol is set to a positive number, you're at the end of the list.
 	if (eol > 0) {
 		return;
 	}
@@ -90,7 +90,7 @@ void AudioDriverPulseAudio::pa_sink_info_cb(pa_context *c, const pa_sink_info *l
 void AudioDriverPulseAudio::pa_source_info_cb(pa_context *c, const pa_source_info *l, int eol, void *userdata) {
 	AudioDriverPulseAudio *ad = static_cast<AudioDriverPulseAudio *>(userdata);
 
-	// If eol is set to a positive number, you're at the end of the list
+	// If eol is set to a positive number, you're at the end of the list.
 	if (eol > 0) {
 		return;
 	}
@@ -115,12 +115,12 @@ void AudioDriverPulseAudio::pa_server_info_cb(pa_context *c, const pa_server_inf
 	ad->pa_status++;
 }
 
-Error AudioDriverPulseAudio::detect_channels(bool input) {
-	pa_channel_map_init_stereo(input ? &pa_rec_map : &pa_map);
+Error AudioDriverPulseAudio::detect_channels(bool p_input) {
+	pa_channel_map_init_stereo(p_input ? &pa_rec_map : &pa_map);
 
-	String device = input ? input_device_name : output_device_name;
+	String device = p_input ? input_device_name : output_device_name;
 	if (device == "Default") {
-		// Get the default output device name
+		// Get the default output device name.
 		pa_status = 0;
 		pa_operation *pa_op = pa_context_get_server_info(pa_ctx, &AudioDriverPulseAudio::pa_server_info_cb, (void *)this);
 		if (pa_op) {
@@ -140,16 +140,16 @@ Error AudioDriverPulseAudio::detect_channels(bool input) {
 
 	char dev[1024];
 	if (device == "Default") {
-		strcpy(dev, input ? default_input_device.utf8().get_data() : default_output_device.utf8().get_data());
+		strcpy(dev, p_input ? default_input_device.utf8().get_data() : default_output_device.utf8().get_data());
 	} else {
 		strcpy(dev, device.utf8().get_data());
 	}
 	print_verbose("PulseAudio: Detecting channels for device: " + String(dev));
 
-	// Now using the device name get the amount of channels
+	// Now using the device name get the amount of channels.
 	pa_status = 0;
 	pa_operation *pa_op;
-	if (input) {
+	if (p_input) {
 		pa_op = pa_context_get_source_info_by_name(pa_ctx, dev, &AudioDriverPulseAudio::pa_source_info_cb, (void *)this);
 	} else {
 		pa_op = pa_context_get_sink_info_by_name(pa_ctx, dev, &AudioDriverPulseAudio::pa_sink_info_cb, (void *)this);
@@ -169,7 +169,7 @@ Error AudioDriverPulseAudio::detect_channels(bool input) {
 			return FAILED;
 		}
 	} else {
-		if (input) {
+		if (p_input) {
 			ERR_PRINT("pa_context_get_source_info_by_name error");
 		} else {
 			ERR_PRINT("pa_context_get_sink_info_by_name error");
@@ -180,7 +180,7 @@ Error AudioDriverPulseAudio::detect_channels(bool input) {
 }
 
 Error AudioDriverPulseAudio::init_output_device() {
-	// If there is a specified output device, check that it is really present
+	// If there is a specified output device, check that it is really present.
 	if (output_device_name != "Default") {
 		PackedStringArray list = get_output_device_list();
 		if (list.find(output_device_name) == -1) {
@@ -189,38 +189,20 @@ Error AudioDriverPulseAudio::init_output_device() {
 		}
 	}
 
-	// Detect the amount of channels PulseAudio is using
-	// Note: If using an even amount of channels (2, 4, etc) channels and pa_map.channels will be equal,
-	// if not then pa_map.channels will have the real amount of channels PulseAudio is using and channels
-	// will have the amount of channels Godot is using (in this case it's pa_map.channels + 1)
-	Error err = detect_channels();
+	Error err = detect_channels(false);
 	if (err != OK) {
 		// This most likely means there are no sinks.
 		ERR_PRINT("PulseAudio: init_output_device failed to detect number of output channels");
 		return err;
 	}
 
-	switch (pa_map.channels) {
-		case 1: // Mono
-		case 3: // Surround 2.1
-		case 5: // Surround 5.0
-		case 7: // Surround 7.0
-			channels = pa_map.channels + 1;
-			break;
-
-		case 2: // Stereo
-		case 4: // Surround 4.0
-		case 6: // Surround 5.1
-		case 8: // Surround 7.1
-			channels = pa_map.channels;
-			break;
-
-		default:
-			WARN_PRINT("PulseAudio: Unsupported number of output channels: " + itos(pa_map.channels));
-			pa_channel_map_init_stereo(&pa_map);
-			channels = 2;
-			break;
+	if (!are_output_channels_recommended(pa_map.channels)) {
+		WARN_PRINT("PulseAudio: Unsupported number of output channels: " + itos(pa_map.channels));
+		pa_channel_map_init_stereo(&pa_map);
 	}
+
+	// TODO: `output_buffer_format` is hardcoded.
+	output_buffer_format = BUFFER_FORMAT_INTEGER_16;
 
 	int tmp_latency = Engine::get_singleton()->get_audio_output_latency();
 	buffer_frames = closest_power_of_2(tmp_latency * mix_rate / 1000);
@@ -249,13 +231,13 @@ Error AudioDriverPulseAudio::init_output_device() {
 	}
 
 	pa_buffer_attr attr;
-	// set to appropriate buffer length (in bytes) from global settings
+	// Set to appropriate buffer length (in bytes) from global settings.
 	// Note: PulseAudio defaults to 4 fragments, which means that the actual
 	// latency is tlength / fragments. It seems that the PulseAudio has no way
-	// to get the fragments number so we're hardcoding this to the default of 4
+	// to get the fragments number so we're hardcoding this to the default of 4.
 	const int fragments = 4;
 	attr.tlength = pa_buffer_size * sizeof(int16_t) * fragments;
-	// set them to be automatically chosen
+	// Set them to be automatically chosen.
 	attr.prebuf = (uint32_t)-1;
 	attr.maxlength = (uint32_t)-1;
 	attr.minreq = (uint32_t)-1;
@@ -265,7 +247,6 @@ Error AudioDriverPulseAudio::init_output_device() {
 	int error_code = pa_stream_connect_playback(pa_str, dev, &attr, flags, nullptr, nullptr);
 	ERR_FAIL_COND_V(error_code < 0, ERR_CANT_OPEN);
 
-	samples_in.resize(buffer_frames * channels);
 	samples_out.resize(pa_buffer_size);
 
 	// Reset audio input to keep synchronization.
@@ -283,7 +264,7 @@ Error AudioDriverPulseAudio::init() {
 	int dylibloader_verbose = 0;
 #endif
 #ifdef ALSAMIDI_ENABLED
-	// If using PulseAudio with ALSA MIDI, we need to initialize ALSA as well
+	// If using PulseAudio with ALSA MIDI, we need to initialize ALSA as well.
 	initialize_asound(dylibloader_verbose);
 #endif
 	if (initialize_pulse(dylibloader_verbose)) {
@@ -408,28 +389,7 @@ void AudioDriverPulseAudio::thread_func(void *p_udata) {
 			if (!ad->active.is_set()) {
 				ad->samples_out.fill(0);
 			} else {
-				ad->audio_server_process(ad->buffer_frames, ad->samples_in.ptrw());
-
-				int16_t *out_ptr = ad->samples_out.ptrw();
-
-				if (ad->channels == ad->pa_map.channels) {
-					for (unsigned int i = 0; i < ad->pa_buffer_size; i++) {
-						out_ptr[i] = ad->samples_in[i] >> 16;
-					}
-				} else {
-					// Uneven amount of channels
-					unsigned int in_idx = 0;
-					unsigned int out_idx = 0;
-
-					for (unsigned int i = 0; i < ad->buffer_frames; i++) {
-						for (int j = 0; j < ad->pa_map.channels - 1; j++) {
-							out_ptr[out_idx++] = ad->samples_in[in_idx++] >> 16;
-						}
-						uint32_t l = ad->samples_in[in_idx++] >> 16;
-						uint32_t r = ad->samples_in[in_idx++] >> 16;
-						out_ptr[out_idx++] = (l + r) / 2;
-					}
-				}
+				ad->audio_server_process(ad->buffer_frames, ad->samples_out.ptrw());
 			}
 
 			avail_bytes = ad->pa_buffer_size * sizeof(int16_t);
@@ -462,7 +422,7 @@ void AudioDriverPulseAudio::thread_func(void *p_udata) {
 			}
 		}
 
-		// User selected a new output device, finish the current one so we'll init the new output device
+		// User selected a new output device, finish the current one so we'll init the new output device.
 		if (ad->output_device_name != ad->new_output_device) {
 			ad->output_device_name = ad->new_output_device;
 			ad->finish_output_device();
@@ -485,7 +445,7 @@ void AudioDriverPulseAudio::thread_func(void *p_udata) {
 			write_ofs = 0;
 		}
 
-		// If we're using the default output device, check that the current output device is still the default
+		// If we're using the default output device, check that the current output device is still the default.
 		if (ad->output_device_name == "Default") {
 			uint64_t msec = OS::get_singleton()->get_ticks_msec();
 			if (msec > (default_device_msec + 1000)) {
@@ -529,23 +489,14 @@ void AudioDriverPulseAudio::thread_func(void *p_udata) {
 			size_t bytes = pa_stream_readable_size(ad->pa_rec_str);
 			if (bytes > 0) {
 				const void *ptr = nullptr;
-				size_t maxbytes = ad->input_buffer.size() * sizeof(int16_t);
+				size_t max_bytes = ad->input_buffer.size() * ad->pa_rec_map.channels * sizeof(int16_t);
 
-				bytes = MIN(bytes, maxbytes);
+				bytes = MIN(bytes, max_bytes);
 				ret = pa_stream_peek(ad->pa_rec_str, &ptr, &bytes);
 				if (ret != 0) {
 					ERR_PRINT("pa_stream_peek error");
 				} else {
-					int16_t *srcptr = (int16_t *)ptr;
-					for (size_t i = bytes >> 1; i > 0; i--) {
-						int32_t sample = int32_t(*srcptr++) << 16;
-						ad->input_buffer_write(sample);
-
-						if (ad->pa_rec_map.channels == 1) {
-							// In case input device is single channel convert it to Stereo
-							ad->input_buffer_write(sample);
-						}
-					}
+					ad->input_buffer_process(bytes / (ad->pa_rec_map.channels * sizeof(int16_t)), ptr);
 
 					read_bytes += bytes;
 					ret = pa_stream_drop(ad->pa_rec_str);
@@ -555,7 +506,7 @@ void AudioDriverPulseAudio::thread_func(void *p_udata) {
 				}
 			}
 
-			// User selected a new input device, finish the current one so we'll init the new input device
+			// User selected a new input device, finish the current one so we'll init the new input device.
 			if (ad->input_device_name != ad->new_input_device) {
 				ad->input_device_name = ad->new_input_device;
 				ad->finish_input_device();
@@ -579,7 +530,7 @@ void AudioDriverPulseAudio::thread_func(void *p_udata) {
 		ad->stop_counting_ticks();
 		ad->unlock();
 
-		// Let the thread rest a while if we haven't read or write anything
+		// Let the thread rest a while if we haven't read or written anything.
 		if (written_bytes == 0 && read_bytes == 0) {
 			OS::get_singleton()->delay_usec(1000);
 		}
@@ -594,14 +545,18 @@ int AudioDriverPulseAudio::get_mix_rate() const {
 	return mix_rate;
 }
 
-AudioDriver::SpeakerMode AudioDriverPulseAudio::get_speaker_mode() const {
-	return get_speaker_mode_by_total_channels(channels);
+int AudioDriverPulseAudio::get_output_channels() const {
+	return pa_map.channels;
+}
+
+AudioDriver::BufferFormat AudioDriverPulseAudio::get_output_buffer_format() const {
+	return output_buffer_format;
 }
 
 void AudioDriverPulseAudio::pa_sinklist_cb(pa_context *c, const pa_sink_info *l, int eol, void *userdata) {
 	AudioDriverPulseAudio *ad = static_cast<AudioDriverPulseAudio *>(userdata);
 
-	// If eol is set to a positive number, you're at the end of the list
+	// If eol is set to a positive number, you're at the end of the list.
 	if (eol > 0) {
 		return;
 	}
@@ -620,7 +575,7 @@ PackedStringArray AudioDriverPulseAudio::get_output_device_list() {
 
 	lock();
 
-	// Get the output device list
+	// Get the output device list.
 	pa_status = 0;
 	pa_operation *pa_op = pa_context_get_sink_info_list(pa_ctx, pa_sinklist_cb, (void *)this);
 	if (pa_op) {
@@ -692,7 +647,7 @@ void AudioDriverPulseAudio::finish() {
 }
 
 Error AudioDriverPulseAudio::init_input_device() {
-	// If there is a specified input device, check that it is really present
+	// If there is a specified input device, check that it is really present.
 	if (input_device_name != "Default") {
 		PackedStringArray list = get_input_device_list();
 		if (list.find(input_device_name) == -1) {
@@ -701,19 +656,22 @@ Error AudioDriverPulseAudio::init_input_device() {
 		}
 	}
 
-	detect_channels(true);
-	switch (pa_rec_map.channels) {
-		case 1: // Mono
-		case 2: // Stereo
-			break;
+	Error err = detect_channels(true);
+	if (err != OK) {
+		// This most likely means there are no sources.
+		ERR_PRINT("PulseAudio: init_input_device failed to detect number of input channels");
+		return err;
+	}
 
-		default:
-			WARN_PRINT("PulseAudio: Unsupported number of input channels: " + itos(pa_rec_map.channels));
-			pa_channel_map_init_stereo(&pa_rec_map);
-			break;
+	if (!are_input_channels_recommended(pa_rec_map.channels)) {
+		WARN_PRINT("PulseAudio: Unsupported number of input channels: " + itos(pa_rec_map.channels));
+		pa_channel_map_init_stereo(&pa_rec_map);
 	}
 
 	print_verbose("PulseAudio: detected " + itos(pa_rec_map.channels) + " input channels");
+
+	// TODO: `input_buffer_format` is hardcoded.
+	input_buffer_format = BUFFER_FORMAT_INTEGER_16;
 
 	pa_sample_spec spec;
 
@@ -777,10 +735,18 @@ Error AudioDriverPulseAudio::input_stop() {
 	return OK;
 }
 
+int AudioDriverPulseAudio::get_input_channels() const {
+	return pa_rec_map.channels;
+}
+
+AudioDriver::BufferFormat AudioDriverPulseAudio::get_input_buffer_format() const {
+	return input_buffer_format;
+}
+
 void AudioDriverPulseAudio::pa_sourcelist_cb(pa_context *c, const pa_source_info *l, int eol, void *userdata) {
 	AudioDriverPulseAudio *ad = static_cast<AudioDriverPulseAudio *>(userdata);
 
-	// If eol is set to a positive number, you're at the end of the list
+	// If eol is set to a positive number, you're at the end of the list.
 	if (eol > 0) {
 		return;
 	}
@@ -802,7 +768,7 @@ PackedStringArray AudioDriverPulseAudio::get_input_device_list() {
 
 	lock();
 
-	// Get the device list
+	// Get the device list.
 	pa_status = 0;
 	pa_operation *pa_op = pa_context_get_source_info_list(pa_ctx, pa_sourcelist_cb, (void *)this);
 	if (pa_op) {
@@ -835,11 +801,6 @@ void AudioDriverPulseAudio::set_input_device(const String &p_name) {
 	lock();
 	new_input_device = p_name;
 	unlock();
-}
-
-AudioDriverPulseAudio::AudioDriverPulseAudio() {
-	samples_in.clear();
-	samples_out.clear();
 }
 
 #endif // PULSEAUDIO_ENABLED

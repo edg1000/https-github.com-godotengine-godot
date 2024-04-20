@@ -51,7 +51,6 @@ void AudioDriverWeb::_latency_update_callback(float p_latency) {
 }
 
 void AudioDriverWeb::_audio_driver_process(int p_from, int p_samples) {
-	int32_t *stream_buffer = reinterpret_cast<int32_t *>(output_rb);
 	const int max_samples = memarr_len(output_rb);
 
 	int write_pos = p_from;
@@ -59,27 +58,24 @@ void AudioDriverWeb::_audio_driver_process(int p_from, int p_samples) {
 	if (to_write == 0) {
 		to_write = max_samples;
 	}
-	// High part
+
+	// High part.
 	if (write_pos + to_write > max_samples) {
 		const int samples_high = max_samples - write_pos;
-		audio_server_process(samples_high / channel_count, &stream_buffer[write_pos]);
-		for (int i = write_pos; i < max_samples; i++) {
-			output_rb[i] = float(stream_buffer[i] >> 16) / 32768.f;
-		}
+		audio_server_process(samples_high / audio_context.output_channels, &output_rb[write_pos]);
 		to_write -= samples_high;
 		write_pos = 0;
 	}
-	// Leftover
-	audio_server_process(to_write / channel_count, &stream_buffer[write_pos]);
-	for (int i = write_pos; i < write_pos + to_write; i++) {
-		output_rb[i] = float(stream_buffer[i] >> 16) / 32768.f;
-	}
+
+	// Leftover.
+	audio_server_process(to_write / audio_context.output_channels, &output_rb[write_pos]);
 }
 
 void AudioDriverWeb::_audio_driver_capture(int p_from, int p_samples) {
 	if (get_input_buffer().size() == 0) {
 		return; // Input capture stopped.
 	}
+
 	const int max_samples = memarr_len(input_rb);
 
 	int read_pos = p_from;
@@ -87,43 +83,44 @@ void AudioDriverWeb::_audio_driver_capture(int p_from, int p_samples) {
 	if (to_read == 0) {
 		to_read = max_samples;
 	}
-	// High part
+
+	// High part.
 	if (read_pos + to_read > max_samples) {
 		const int samples_high = max_samples - read_pos;
-		for (int i = read_pos; i < max_samples; i++) {
-			input_buffer_write(int32_t(input_rb[i] * 32768.f) * (1U << 16));
-		}
+		input_buffer_process(samples_high / audio_context.input_channels, &input_rb[read_pos]);
 		to_read -= samples_high;
 		read_pos = 0;
 	}
-	// Leftover
-	for (int i = read_pos; i < read_pos + to_read; i++) {
-		input_buffer_write(int32_t(input_rb[i] * 32768.f) * (1U << 16));
-	}
+
+	// Leftover.
+	input_buffer_process(to_read / audio_context.input_channels, &input_rb[read_pos]);
 }
 
 Error AudioDriverWeb::init() {
 	int latency = Engine::get_singleton()->get_audio_output_latency();
+
 	if (!audio_context.inited) {
 		audio_context.mix_rate = _get_configured_mix_rate();
-		audio_context.channel_count = godot_audio_init(&audio_context.mix_rate, latency, &_state_change_callback, &_latency_update_callback);
+		audio_context.output_channels = godot_audio_init(&audio_context.mix_rate, latency, &_state_change_callback, &_latency_update_callback);
 		audio_context.inited = true;
 	}
-	mix_rate = audio_context.mix_rate;
-	channel_count = audio_context.channel_count;
-	buffer_length = closest_power_of_2((latency * mix_rate / 1000));
-	Error err = create(buffer_length, channel_count);
+
+	buffer_length = closest_power_of_2((latency * audio_context.mix_rate / 1000));
+	Error err = create(buffer_length, audio_context.output_channels);
 	if (err != OK) {
 		return err;
 	}
+
+	const size_t array_size = buffer_length * (size_t)audio_context.output_channels;
+
 	if (output_rb) {
 		memdelete_arr(output_rb);
 	}
-	const size_t array_size = buffer_length * (size_t)channel_count;
 	output_rb = memnew_arr(float, array_size);
 	if (!output_rb) {
 		return ERR_OUT_OF_MEMORY;
 	}
+
 	if (input_rb) {
 		memdelete_arr(input_rb);
 	}
@@ -131,6 +128,7 @@ Error AudioDriverWeb::init() {
 	if (!input_rb) {
 		return ERR_OUT_OF_MEMORY;
 	}
+
 	return OK;
 }
 
@@ -139,29 +137,35 @@ void AudioDriverWeb::start() {
 }
 
 void AudioDriverWeb::resume() {
-	if (audio_context.state == 0) { // 'suspended'
+	if (audio_context.state == 0) { // 'suspended'.
 		godot_audio_resume();
 	}
 }
 
 float AudioDriverWeb::get_latency() {
-	return audio_context.output_latency + (float(buffer_length) / mix_rate);
+	return audio_context.output_latency + (float(buffer_length) / audio_context.mix_rate);
 }
 
 int AudioDriverWeb::get_mix_rate() const {
-	return mix_rate;
+	return audio_context.mix_rate;
 }
 
-AudioDriver::SpeakerMode AudioDriverWeb::get_speaker_mode() const {
-	return get_speaker_mode_by_total_channels(channel_count);
+int AudioDriverWeb::get_output_channels() const {
+	return audio_context.output_channels;
+}
+
+AudioDriver::BufferFormat AudioDriverWeb::get_output_buffer_format() const {
+	return output_buffer_format;
 }
 
 void AudioDriverWeb::finish() {
 	finish_driver();
+
 	if (output_rb) {
 		memdelete_arr(output_rb);
 		output_rb = nullptr;
 	}
+
 	if (input_rb) {
 		memdelete_arr(input_rb);
 		input_rb = nullptr;
@@ -169,12 +173,15 @@ void AudioDriverWeb::finish() {
 }
 
 Error AudioDriverWeb::input_start() {
-	lock();
-	input_buffer_init(buffer_length);
-	unlock();
-	if (godot_audio_input_start()) {
+	int input_channels = godot_audio_input_start();
+	if (input_channels == 0) {
 		return FAILED;
 	}
+
+	lock();
+	audio_context.input_channels = input_channels;
+	input_buffer_init(buffer_length);
+	unlock();
 	return OK;
 }
 
@@ -186,39 +193,54 @@ Error AudioDriverWeb::input_stop() {
 	return OK;
 }
 
+int AudioDriverWeb::get_input_channels() const {
+	return audio_context.input_channels;
+}
+
+AudioDriver::BufferFormat AudioDriverWeb::get_input_buffer_format() const {
+	return input_buffer_format;
+}
+
 #ifdef THREADS_ENABLED
 
-/// AudioWorkletNode implementation (threads)
+/// AudioWorkletNode implementation (threads).
 void AudioDriverWorklet::_audio_thread_func(void *p_data) {
 	AudioDriverWorklet *driver = static_cast<AudioDriverWorklet *>(p_data);
+
 	const int out_samples = memarr_len(driver->get_output_rb());
 	const int in_samples = memarr_len(driver->get_input_rb());
+
 	int wpos = 0;
 	int to_write = out_samples;
 	int rpos = 0;
 	int to_read = 0;
 	int32_t step = 0;
+
 	while (!driver->quit) {
 		if (to_read) {
 			driver->lock();
 			driver->_audio_driver_capture(rpos, to_read);
 			godot_audio_worklet_state_add(driver->state, STATE_SAMPLES_IN, -to_read);
 			driver->unlock();
+
 			rpos += to_read;
 			if (rpos >= in_samples) {
 				rpos -= in_samples;
 			}
 		}
+
 		if (to_write) {
 			driver->lock();
 			driver->_audio_driver_process(wpos, to_write);
 			godot_audio_worklet_state_add(driver->state, STATE_SAMPLES_OUT, to_write);
 			driver->unlock();
+
 			wpos += to_write;
 			if (wpos >= out_samples) {
 				wpos -= out_samples;
 			}
 		}
+
 		step = godot_audio_worklet_state_wait(driver->state, STATE_PROCESS, step, 1);
 		to_write = out_samples - godot_audio_worklet_state_get(driver->state, STATE_SAMPLES_OUT);
 		to_read = godot_audio_worklet_state_get(driver->state, STATE_SAMPLES_IN);
@@ -252,7 +274,7 @@ void AudioDriverWorklet::finish_driver() {
 
 #else // No threads.
 
-/// AudioWorkletNode implementation (no threads)
+/// AudioWorkletNode implementation (no threads).
 AudioDriverWorklet *AudioDriverWorklet::singleton = nullptr;
 
 Error AudioDriverWorklet::create(int &p_buffer_size, int p_channels) {
@@ -277,7 +299,7 @@ void AudioDriverWorklet::_capture_callback(int p_pos, int p_samples) {
 	driver->_audio_driver_capture(p_pos, p_samples);
 }
 
-/// ScriptProcessorNode implementation
+/// ScriptProcessorNode implementation.
 AudioDriverScriptProcessor *AudioDriverScriptProcessor::singleton = nullptr;
 
 void AudioDriverScriptProcessor::_process_callback() {
