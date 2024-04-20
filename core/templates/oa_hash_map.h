@@ -72,7 +72,7 @@ private:
 	_FORCE_INLINE_ uint32_t _hash(const TKey &p_key) const {
 		uint32_t hash = Hasher::hash(p_key);
 
-		if (hash == EMPTY_HASH) {
+		if (unlikely(hash == EMPTY_HASH)) {
 			hash = EMPTY_HASH + 1;
 		}
 
