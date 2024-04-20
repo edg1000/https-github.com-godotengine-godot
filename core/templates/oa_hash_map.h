@@ -35,6 +35,12 @@
 #include "core/os/memory.h"
 #include "core/templates/hashfuncs.h"
 
+template <typename K, typename V>
+struct OAHashMapElement {
+	K key;
+	V value;
+};
+
 /**
  * A HashMap implementation that uses open addressing with Robin Hood hashing.
  * Robin Hood hashing swaps out entries that have a smaller probing distance
@@ -58,8 +64,7 @@ public:
 	static constexpr float MAX_OCCUPANCY = 0.7;
 
 private:
-	TValue *values = nullptr;
-	TKey *keys = nullptr;
+	OAHashMapElement<TKey, TValue> *elements = nullptr;
 	uint32_t *hashes = nullptr;
 
 	// Due to optimization, this is `capacity - 1`. Use + 1 to get normal capacity.
@@ -80,7 +85,7 @@ private:
 	}
 
 	_FORCE_INLINE_ uint32_t _get_probe_length(uint32_t p_pos, uint32_t p_hash) const {
-		uint32_t original_pos = p_hash & capacity;
+		const uint32_t original_pos = p_hash & capacity;
 		if (unlikely(p_pos < original_pos)) {
 			return capacity + 1 - original_pos + p_pos;
 		}
@@ -89,17 +94,18 @@ private:
 
 	_FORCE_INLINE_ void _construct(uint32_t p_pos, uint32_t p_hash, const TKey &p_key, const TValue &p_value) {
 		if constexpr (!std::is_trivially_constructible_v<TKey>) {
-			memnew_placement(&keys[p_pos], TKey(p_key));
+			memnew_placement(&elements[p_pos].key, TKey(p_key));
 		} else {
 			TKey key = p_key;
-			keys[p_pos] = key;
+			elements[p_pos].key = key;
 		}
 		if constexpr (!std::is_trivially_constructible_v<TValue>) {
-			memnew_placement(&values[p_pos], TValue(p_value));
+			memnew_placement(&elements[p_pos].value, TValue(p_value));
 		} else {
 			TValue value = p_value;
-			values[p_pos] = value;
+			elements[p_pos].value = value;
 		}
+
 		hashes[p_pos] = p_hash;
 
 		num_elements++;
@@ -112,7 +118,7 @@ private:
 	bool _lookup_pos_with_hash(const TKey &p_key, uint32_t &r_pos, uint32_t p_hash) const {
 		uint32_t pos = p_hash & capacity;
 
-		if (hashes[pos] == p_hash && Comparator::compare(keys[pos], p_key)) {
+		if (hashes[pos] == p_hash && Comparator::compare(elements[pos].key, p_key)) {
 			r_pos = pos;
 			return true;
 		}
@@ -125,7 +131,7 @@ private:
 		pos = (pos + 1) & capacity;
 		uint32_t distance = 1;
 		while (true) {
-			if (hashes[pos] == p_hash && Comparator::compare(keys[pos], p_key)) {
+			if (hashes[pos] == p_hash && Comparator::compare(elements[pos].key, p_key)) {
 				r_pos = pos;
 				return true;
 			}
@@ -162,8 +168,8 @@ private:
 			uint32_t existing_probe_len = _get_probe_length(pos, hashes[pos]);
 			if (existing_probe_len < distance) {
 				SWAP(hash, hashes[pos]);
-				SWAP(key, keys[pos]);
-				SWAP(value, values[pos]);
+				SWAP(key, elements[pos].key);
+				SWAP(value, elements[pos].value);
 				distance = existing_probe_len;
 			}
 
@@ -179,14 +185,12 @@ private:
 		capacity = MAX(4u, p_new_capacity);
 		capacity = next_power_of_2(capacity - 1) - 1;
 
-		TKey *old_keys = keys;
-		TValue *old_values = values;
+		OAHashMapElement<TKey, TValue> *old_elements = elements;
 		uint32_t *old_hashes = hashes;
 
 		num_elements = 0;
-		keys = static_cast<TKey *>(Memory::alloc_static(sizeof(TKey) * (capacity + 1)));
-		values = static_cast<TValue *>(Memory::alloc_static(sizeof(TValue) * (capacity + 1)));
 		hashes = static_cast<uint32_t *>(Memory::alloc_static(sizeof(uint32_t) * (capacity + 1)));
+		elements = static_cast<OAHashMapElement<TKey, TValue> *>(Memory::alloc_static((sizeof(OAHashMapElement<TKey, TValue>)) * (capacity + 1)));
 
 		for (uint32_t i = 0; i < capacity + 1; i++) {
 			hashes[i] = EMPTY_HASH;
@@ -202,18 +206,17 @@ private:
 				continue;
 			}
 
-			_insert_with_hash(old_hashes[i], old_keys[i], old_values[i]);
+			_insert_with_hash(old_hashes[i], old_elements[i].key, old_elements[i].value);
 
 			if constexpr (!std::is_trivially_destructible_v<TKey>) {
-				old_keys[i].~TKey();
+				old_elements[i].key.~TKey();
 			}
 			if constexpr (!std::is_trivially_destructible_v<TValue>) {
-				old_values[i].~TValue();
+				old_elements[i].value.~TValue();
 			}
 		}
 
-		Memory::free_static(old_keys);
-		Memory::free_static(old_values);
+		Memory::free_static(old_elements);
 		Memory::free_static(old_hashes);
 	}
 
@@ -237,10 +240,10 @@ public:
 
 			hashes[i] = EMPTY_HASH;
 			if constexpr (!std::is_trivially_destructible_v<TValue>) {
-				values[i].~TValue();
+				elements[i].value.~TValue();
 			}
 			if constexpr (!std::is_trivially_destructible_v<TKey>) {
-				keys[i].~TKey();
+				elements[i].key.~TKey();
 			}
 		}
 
@@ -263,7 +266,7 @@ public:
 		bool exists = _lookup_pos_with_hash(p_key, pos, hash);
 
 		if (exists) {
-			values[pos] = p_data;
+			elements[pos].value = p_data;
 		} else {
 			if (num_elements + 1 > MAX_OCCUPANCY * capacity) {
 				_resize_and_rehash();
@@ -283,7 +286,7 @@ public:
 		bool exists = _lookup_pos(p_key, pos);
 
 		if (exists) {
-			r_data = values[pos];
+			r_data = elements[pos].value;
 			return true;
 		}
 
@@ -295,7 +298,7 @@ public:
 		bool exists = _lookup_pos(p_key, pos);
 
 		if (exists) {
-			return &values[pos];
+			return &elements[pos].value;
 		}
 		return nullptr;
 	}
@@ -305,7 +308,7 @@ public:
 		bool exists = _lookup_pos(p_key, pos);
 
 		if (exists) {
-			return &values[pos];
+			return &elements[pos].value;
 		}
 		return nullptr;
 	}
@@ -327,18 +330,18 @@ public:
 		while (hashes[next_pos] != EMPTY_HASH &&
 				_get_probe_length(next_pos, hashes[next_pos]) != 0) {
 			SWAP(hashes[next_pos], hashes[pos]);
-			SWAP(keys[next_pos], keys[pos]);
-			SWAP(values[next_pos], values[pos]);
+			SWAP(elements[next_pos].key, elements[pos].key);
+			SWAP(elements[next_pos].value, elements[pos].value);
 			pos = next_pos;
 			next_pos = (pos + 1) & capacity;
 		}
 
 		hashes[pos] = EMPTY_HASH;
 		if constexpr (!std::is_trivially_destructible_v<TValue>) {
-			values[pos].~TValue();
+			elements[pos].value.~TValue();
 		}
 		if constexpr (!std::is_trivially_destructible_v<TKey>) {
-			keys[pos].~TKey();
+			elements[pos].key.~TKey();
 		}
 
 		num_elements--;
@@ -393,8 +396,8 @@ public:
 			}
 
 			it.valid = true;
-			it.key = &keys[i];
-			it.value = &values[i];
+			it.key = &elements[i].key;
+			it.value = &elements[i].value;
 			return it;
 		}
 
@@ -419,7 +422,7 @@ public:
 		}
 	}
 
-	OAHashMap(uint32_t p_initial_capacity = 64) {
+	OAHashMap(uint32_t p_initial_capacity = 32) {
 		_resize_and_rehash(p_initial_capacity);
 	}
 
@@ -428,9 +431,8 @@ public:
 			clear();
 		}
 
-		Memory::free_static(keys);
-		Memory::free_static(values);
 		Memory::free_static(hashes);
+		Memory::free_static(elements);
 	}
 };
 
