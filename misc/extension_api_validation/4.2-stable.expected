@@ -275,6 +275,7 @@ Validate extension JSON: API was removed: classes/Skeleton3D/signals/bone_pose_c
 
 They have been replaced by a safer API due to performance concerns. Compatibility method registered.
 
+
 GH-90747
 --------
 Validate extension JSON: API was removed: classes/NavigationRegion2D/methods/get_avoidance_layers
@@ -287,3 +288,27 @@ Validate extension JSON: API was removed: classes/NavigationRegion2D/methods/get
 Validate extension JSON: API was removed: classes/NavigationRegion2D/properties/constrain_avoidance
 
 Experimental NavigationRegion2D feature "constrain_avoidance" was discontinued with no replacement.
+
+
+GH-90771
+--------
+Validate extension JSON: API was removed: classes/NavigationObstacle2D/methods/set_navigation_map
+Validate extension JSON: API was removed: classes/NavigationObstacle2D/methods/get_navigation_map
+Validate extension JSON: API was removed: classes/NavigationObstacle3D/methods/set_navigation_map
+Validate extension JSON: API was removed: classes/NavigationObstacle3D/methods/get_navigation_map
+Validate extension JSON: API was removed: classes/NavigationServer2D/methods/map_get_agents
+Validate extension JSON: API was removed: classes/NavigationServer2D/methods/map_get_obstacles
+Validate extension JSON: API was removed: classes/NavigationServer2D/methods/agent_set_map
+Validate extension JSON: API was removed: classes/NavigationServer2D/methods/agent_get_map
+Validate extension JSON: API was removed: classes/NavigationServer2D/methods/agent_is_map_changed
+Validate extension JSON: API was removed: classes/NavigationServer2D/methods/obstacle_set_map
+Validate extension JSON: API was removed: classes/NavigationServer2D/methods/obstacle_get_map
+Validate extension JSON: API was removed: classes/NavigationServer3D/methods/map_get_agents
+Validate extension JSON: API was removed: classes/NavigationServer3D/methods/map_get_obstacles
+Validate extension JSON: API was removed: classes/NavigationServer3D/methods/agent_set_map
+Validate extension JSON: API was removed: classes/NavigationServer3D/methods/agent_get_map
+Validate extension JSON: API was removed: classes/NavigationServer3D/methods/agent_is_map_changed
+Validate extension JSON: API was removed: classes/NavigationServer3D/methods/obstacle_set_map
+Validate extension JSON: API was removed: classes/NavigationServer3D/methods/obstacle_get_map
+
+NavigationServer agents and obstacles are no longer an assigned part of a navigation map. Avoidance agents and avoidance obstacles are moved to avoidance spaces.

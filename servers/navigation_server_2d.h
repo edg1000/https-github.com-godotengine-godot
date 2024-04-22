@@ -59,6 +59,7 @@ public:
 	static NavigationServer2D *get_singleton();
 
 	virtual TypedArray<RID> get_maps() const = 0;
+	virtual TypedArray<RID> get_avoidance_spaces() const = 0;
 
 	/// Create a new map.
 	virtual RID map_create() = 0;
@@ -98,9 +99,6 @@ public:
 
 	virtual TypedArray<RID> map_get_links(RID p_map) const = 0;
 	virtual TypedArray<RID> map_get_regions(RID p_map) const = 0;
-	virtual TypedArray<RID> map_get_agents(RID p_map) const = 0;
-	virtual TypedArray<RID> map_get_obstacles(RID p_map) const = 0;
-
 	virtual void map_force_update(RID p_map) = 0;
 	virtual uint32_t map_get_iteration_id(RID p_map) const = 0;
 
@@ -192,10 +190,6 @@ public:
 	/// Creates the agent.
 	virtual RID agent_create() = 0;
 
-	/// Put the agent in the map.
-	virtual void agent_set_map(RID p_agent, RID p_map) = 0;
-	virtual RID agent_get_map(RID p_agent) const = 0;
-
 	virtual void agent_set_paused(RID p_agent, bool p_paused) = 0;
 	virtual bool agent_get_paused(RID p_agent) const = 0;
 
@@ -256,9 +250,6 @@ public:
 	virtual void agent_set_position(RID p_agent, Vector2 p_position) = 0;
 	virtual Vector2 agent_get_position(RID p_agent) const = 0;
 
-	/// Returns true if the map got changed the previous frame.
-	virtual bool agent_is_map_changed(RID p_agent) const = 0;
-
 	/// Callback called at the end of the RVO process
 	virtual void agent_set_avoidance_callback(RID p_agent, Callable p_callback) = 0;
 	virtual bool agent_has_avoidance_callback(RID p_agent) const = 0;
@@ -272,12 +263,13 @@ public:
 	virtual void agent_set_avoidance_priority(RID p_agent, real_t p_priority) = 0;
 	virtual real_t agent_get_avoidance_priority(RID p_agent) const = 0;
 
+	virtual void agent_set_avoidance_space(RID p_agent, RID p_avoidance_space) = 0;
+	virtual RID agent_get_avoidance_space(RID p_agent) const = 0;
+
 	/// Creates the obstacle.
 	virtual RID obstacle_create() = 0;
 	virtual void obstacle_set_avoidance_enabled(RID p_obstacle, bool p_enabled) = 0;
 	virtual bool obstacle_get_avoidance_enabled(RID p_obstacle) const = 0;
-	virtual void obstacle_set_map(RID p_obstacle, RID p_map) = 0;
-	virtual RID obstacle_get_map(RID p_obstacle) const = 0;
 	virtual void obstacle_set_paused(RID p_obstacle, bool p_paused) = 0;
 	virtual bool obstacle_get_paused(RID p_obstacle) const = 0;
 	virtual void obstacle_set_radius(RID p_obstacle, real_t p_radius) = 0;
@@ -290,10 +282,30 @@ public:
 	virtual Vector<Vector2> obstacle_get_vertices(RID p_obstacle) const = 0;
 	virtual void obstacle_set_avoidance_layers(RID p_obstacle, uint32_t p_layers) = 0;
 	virtual uint32_t obstacle_get_avoidance_layers(RID p_obstacle) const = 0;
+	virtual void obstacle_set_avoidance_space(RID p_obstacle, RID p_avoidance_space) = 0;
+	virtual RID obstacle_get_avoidance_space(RID p_obstacle) const = 0;
+
+	enum AvoidanceProcessMode {
+		AVOIDANCE_PROCESS_MANUAL,
+		AVOIDANCE_PROCESS_PHYSICS,
+		AVOIDANCE_PROCESS_FRAME
+	};
+
+	virtual RID avoidance_space_create() = 0;
+	virtual uint32_t avoidance_space_get_iteration_id(RID p_avoidance_space) const = 0;
+	virtual void avoidance_space_set_active(RID p_avoidance_space, bool p_active) = 0;
+	virtual bool avoidance_space_is_active(RID p_avoidance_space) const = 0;
+	virtual void avoidance_space_set_process_mode(RID p_avoidance_space, AvoidanceProcessMode p_process_mode) = 0;
+	virtual AvoidanceProcessMode avoidance_space_get_process_mode(RID p_avoidance_space) const = 0;
+	virtual void avoidance_space_step_manual(RID p_avoidance_space, real_t p_step) = 0;
+	virtual TypedArray<RID> avoidance_space_get_agents(RID p_avoidance_space) const = 0;
+	virtual TypedArray<RID> avoidance_space_get_obstacles(RID p_avoidance_space) const = 0;
 
 	/// Returns a customized navigation path using a query parameters object
 	virtual void query_path(const Ref<NavigationPathQueryParameters2D> &p_query_parameters, Ref<NavigationPathQueryResult2D> p_query_result) const = 0;
 
+	virtual void process(real_t p_delta_time) = 0;
+	virtual void physics_process(real_t p_delta_time) = 0;
 	virtual void init() = 0;
 	virtual void sync() = 0;
 	virtual void finish() = 0;
@@ -316,6 +328,18 @@ public:
 
 	void set_debug_enabled(bool p_enabled);
 	bool get_debug_enabled() const;
+
+#ifndef DISABLE_DEPRECATED
+	virtual TypedArray<RID> map_get_agents(RID p_map) const = 0;
+	virtual TypedArray<RID> map_get_obstacles(RID p_map) const = 0;
+
+	virtual void agent_set_map(RID p_agent, RID p_map) = 0;
+	virtual RID agent_get_map(RID p_agent) const = 0;
+	virtual bool agent_is_map_changed(RID p_agent) const = 0;
+
+	virtual void obstacle_set_map(RID p_obstacle, RID p_map) = 0;
+	virtual RID obstacle_get_map(RID p_obstacle) const = 0;
+#endif // DISABLE_DEPRECATED
 
 #ifdef DEBUG_ENABLED
 	void set_debug_navigation_enabled(bool p_enabled);
@@ -394,6 +418,7 @@ public:
 #ifdef DEBUG_ENABLED
 private:
 	void _emit_navigation_debug_changed_signal();
+	void _emit_avoidance_debug_changed_signal();
 #endif // DEBUG_ENABLED
 };
 
@@ -407,5 +432,7 @@ public:
 	static void set_default_server(NavigationServer2DCallback p_callback);
 	static NavigationServer2D *new_default_server();
 };
+
+VARIANT_ENUM_CAST(NavigationServer2D::AvoidanceProcessMode);
 
 #endif // NAVIGATION_SERVER_2D_H
