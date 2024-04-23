@@ -1156,9 +1156,19 @@ void SurfaceTool::mikktSetTSpaceDefault(const SMikkTSpaceContext *pContext, cons
 }
 
 void SurfaceTool::generate_tangents() {
-	ERR_FAIL_COND(!(format & Mesh::ARRAY_FORMAT_TEX_UV));
 	ERR_FAIL_COND(!(format & Mesh::ARRAY_FORMAT_NORMAL));
-
+	if (!(format & Mesh::ARRAY_FORMAT_TEX_UV)) {
+		for (Vertex &vertex : vertex_array) {
+			Vector3 tangent = Vector3(vertex.normal.z, -vertex.normal.x, vertex.normal.y);
+			if (Math::is_zero_approx(tangent.length_squared())) {
+				tangent = Vector3(1, 0, 0);
+			}
+			tangent = tangent.cross(vertex.normal.normalized()).normalized();
+			vertex.tangent = Vector3(tangent.x, tangent.y, tangent.z);
+		}
+		format |= Mesh::ARRAY_FORMAT_TANGENT;
+		return;
+	}
 	SMikkTSpaceInterface mkif;
 	mkif.m_getNormal = mikktGetNormal;
 	mkif.m_getNumFaces = mikktGetNumFaces;
