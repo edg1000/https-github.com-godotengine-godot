@@ -3015,7 +3015,6 @@ Error ResourceImporterScene::import(const String &p_source_file, const String &p
 			}
 		}
 	}
-	err = OK;
 
 	progress.step(TTR("Running Custom Script..."), 2);
 
@@ -3044,7 +3043,7 @@ Error ResourceImporterScene::import(const String &p_source_file, const String &p
 			EditorNode::add_io_error(
 					TTR("Error running post-import script:") + " " + post_import_script_path + "\n" +
 					TTR("Did you return a Node-derived object in the `_post_import()` method?"));
-			return err;
+			return ERR_CANT_CREATE;
 		}
 	}
 
