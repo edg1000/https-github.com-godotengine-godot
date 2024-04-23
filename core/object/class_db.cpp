@@ -425,8 +425,8 @@ uint32_t ClassDB::get_api_hash(APIType p_api) {
 			for (const StringName &F : snames) {
 				MethodInfo &mi = t->signal_map[F];
 				hash = hash_murmur3_one_64(F.hash(), hash);
-				for (int i = 0; i < mi.arguments.size(); i++) {
-					hash = hash_murmur3_one_64(mi.arguments[i].type, hash);
+				for (const PropertyInfo &pi : mi.arguments) {
+					hash = hash_murmur3_one_64(pi.type, hash);
 				}
 			}
 		}
@@ -2154,8 +2154,8 @@ void ClassDB::cleanup() {
 			memdelete(F.value);
 		}
 		for (KeyValue<StringName, LocalVector<MethodBind *>> &F : ti.method_map_compatibility) {
-			for (uint32_t i = 0; i < F.value.size(); i++) {
-				memdelete(F.value[i]);
+			for (MethodBind *bind : F.value) {
+				memdelete(bind);
 			}
 		}
 	}
