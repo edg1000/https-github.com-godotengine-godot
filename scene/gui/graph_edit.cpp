@@ -1059,7 +1059,7 @@ void GraphEdit::_top_connection_layer_input(const Ref<InputEvent> &p_ev) {
 						port_size.height = MAX(port_size.height, child ? child->get_size().y : 0);
 
 						int type = graph_node->get_output_port_type(j);
-						if ((type == connecting_type ||
+						if ((type == connecting_type || graph_node->is_ignoring_valid_connection_type() ||
 									valid_connection_types.has(ConnectionType(type, connecting_type))) &&
 								is_in_output_hotzone(graph_node, j, mpos, port_size)) {
 							if (!is_node_hover_valid(graph_node->get_name(), j, connecting_from_node, connecting_from_port_index)) {
@@ -1084,7 +1084,7 @@ void GraphEdit::_top_connection_layer_input(const Ref<InputEvent> &p_ev) {
 						port_size.height = MAX(port_size.height, child ? child->get_size().y : 0);
 
 						int type = graph_node->get_input_port_type(j);
-						if ((type == connecting_type || valid_connection_types.has(ConnectionType(connecting_type, type))) &&
+						if ((type == connecting_type || graph_node->is_ignoring_valid_connection_type() || valid_connection_types.has(ConnectionType(connecting_type, type))) &&
 								is_in_input_hotzone(graph_node, j, mpos, port_size)) {
 							if (!is_node_hover_valid(connecting_from_node, connecting_from_port_index, graph_node->get_name(), j)) {
 								continue;
