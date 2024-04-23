@@ -311,7 +311,7 @@ class CommandQueueMT {
 	struct CommandBase {
 		virtual void call() = 0;
 		virtual SyncSemaphore *get_sync_semaphore() { return nullptr; }
-		virtual ~CommandBase() = default; // Won't be called.
+		virtual ~CommandBase() = default;
 	};
 
 	struct SyncCommand : public CommandBase {
@@ -384,6 +384,10 @@ class CommandQueueMT {
 			if (sync_sem) {
 				sync_sem->sem.post(); // Release in case it needs sync/ret.
 			}
+
+			// If the command involved reallocating the buffer, the address may have changed.
+			cmd = reinterpret_cast<CommandBase *>(&command_mem[flush_read_ptr]);
+			cmd->~CommandBase();
 
 			flush_read_ptr += size;
 		}
