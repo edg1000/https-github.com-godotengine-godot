@@ -136,7 +136,7 @@ void DirectoryCreateDialog::_bind_methods() {
 
 DirectoryCreateDialog::DirectoryCreateDialog() {
 	set_title(TTR("Create Folder"));
-	set_min_size(Size2i(480, 0) * EDSCALE);
+	set_min_size(Vector2i(480 * EDSCALE, 0));
 
 	VBoxContainer *vb = memnew(VBoxContainer);
 	add_child(vb);
