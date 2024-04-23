@@ -181,7 +181,7 @@ public:
 		ERR_FAIL_NULL_V(native_parent->creation_func, nullptr);
 
 		// Construct a placeholder.
-		Object *obj = native_parent->creation_func();
+		Object *obj = native_parent->creation_func(true);
 
 		// ClassDB::set_object_extension_instance() won't be called for placeholders.
 		// We need need to make sure that all the things it would have done (even if
@@ -491,7 +491,7 @@ StringName ClassDB::get_compatibility_class(const StringName &p_class) {
 	return StringName();
 }
 
-Object *ClassDB::_instantiate_internal(const StringName &p_class, bool p_require_real_class) {
+Object *ClassDB::_instantiate_internal(const StringName &p_class, bool p_require_real_class, bool p_extension_owner) {
 	ClassInfo *ti;
 	{
 		OBJTYPE_RLOCK;
@@ -530,8 +530,8 @@ Object *ClassDB::_instantiate_internal(const StringName &p_class, bool p_require
 			}
 		}
 #endif
-
-		return ti->creation_func();
+		// If create an extension owner, should not postinitialize at here.
+		return ti->creation_func(!p_extension_owner);
 	}
 }
 
@@ -541,6 +541,10 @@ Object *ClassDB::instantiate(const StringName &p_class) {
 
 Object *ClassDB::instantiate_no_placeholders(const StringName &p_class) {
 	return _instantiate_internal(p_class, true);
+}
+
+Object *ClassDB::instantiate_without_postinitialization(const StringName &p_class) {
+	return _instantiate_internal(p_class, true, true);
 }
 
 #ifdef TOOLS_ENABLED
