@@ -1475,7 +1475,7 @@ static GDExtensionMethodBindPtr gdextension_classdb_get_method_bind(GDExtensionC
 
 static GDExtensionObjectPtr gdextension_classdb_construct_object(GDExtensionConstStringNamePtr p_classname) {
 	const StringName classname = *reinterpret_cast<const StringName *>(p_classname);
-	return (GDExtensionObjectPtr)ClassDB::instantiate_no_placeholders(classname);
+	return (GDExtensionObjectPtr)ClassDB::instantiate_without_postinitialization(classname);
 }
 
 static void *gdextension_classdb_get_class_tag(GDExtensionConstStringNamePtr p_classname) {
