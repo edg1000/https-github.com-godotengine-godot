@@ -196,7 +196,7 @@ static uint32_t _decode_vertex_index(const Vector3 &p_vertex) {
 	return uint32_t(p_vertex.x) | uint32_t(p_vertex.y) << 16;
 }
 
-// Find a skin cluster conneted to `p_node` via low-level FBX connections.
+// Find a skin cluster connected to `p_node` via low-level FBX connections.
 static ufbx_skin_cluster *_find_skin_cluster(const ufbx_node *p_node) {
 	if (!p_node) {
 		return nullptr;
