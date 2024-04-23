@@ -59,6 +59,7 @@
     <Compile Include="Core\Attributes\ExportSubgroupAttribute.cs" />
     <Compile Include="Core\Attributes\GlobalClassAttribute.cs" />
     <Compile Include="Core\Attributes\GodotClassNameAttribute.cs" />
+    <Compile Include="Core\Attributes\HideAttribute.cs" />
     <Compile Include="Core\Attributes\IconAttribute.cs" />
     <Compile Include="Core\Attributes\MustBeVariantAttribute.cs" />
     <Compile Include="Core\Attributes\RpcAttribute.cs" />
