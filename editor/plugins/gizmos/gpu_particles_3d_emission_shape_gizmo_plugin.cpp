@@ -58,7 +58,7 @@ String GPUParticles3DEmissionShapeGizmoPlugin::get_gizmo_name() const {
 }
 
 int GPUParticles3DEmissionShapeGizmoPlugin::get_priority() const {
-	return 0;
+	return -1;
 }
 
 bool GPUParticles3DEmissionShapeGizmoPlugin::is_selectable_when_hidden() const {
@@ -181,7 +181,6 @@ void GPUParticles3DEmissionShapeGizmoPlugin::set_handle(const EditorNode3DGizmo 
 			mat->set_emission_box_extents(Vector3(mat->get_emission_box_extents().x, mat->get_emission_box_extents().y, d));
 		}
 	} else if (shape == ParticleProcessMaterial::EMISSION_SHAPE_RING) {
-		WARN_PRINT_ONCE("Ring emission shape active");
 		Vector3 ring_axis = mat->get_emission_ring_axis();
 		Basis axis_basis = Basis();
 		axis_basis.rows[1] = ring_axis.normalized();
@@ -191,18 +190,19 @@ void GPUParticles3DEmissionShapeGizmoPlugin::set_handle(const EditorNode3DGizmo 
 		//axis_basis = axis_basis.inverse();
 
 		if (p_id == 1) {
-			Geometry3D::get_closest_points_between_segments(axis_basis.xform(Vector3(0, -4096, 0)), axis_basis.xform(Vector3(0, 4096, 0)), s[0], s[1], ra, rb);
-			d = ra.x;
+			Geometry3D::get_closest_points_between_segments(Vector3(0, 0, -4096), Vector3(0, 0, 4096), s[0], s[1], ra, rb);
+			d = ra.z;
 			if (Node3DEditor::get_singleton()->is_snap_enabled()) {
 				d = Math::snapped(d, Node3DEditor::get_singleton()->get_translate_snap());
 			}
 			if (d <= 0.001) { // Equal is here for negative zero.
 				d = 0.001;
 			}
-			mat->set_emission_ring_height(d);
+			// Times 2 because of using the half_height for drawing
+			mat->set_emission_ring_height(2.0 * d);
 		} else if (p_id == 2) {
-			Geometry3D::get_closest_points_between_segments(axis_basis.xform(Vector3(0, 0, -4096)), axis_basis.xform(Vector3(0, 0, 4096)), s[0], s[1], ra, rb);
-			d = ra.y;
+			Geometry3D::get_closest_points_between_segments(Vector3(0, 0, -4096), Vector3(0, 0, 4096), s[0], s[1], ra, rb);
+			d = ra.z;
 			if (Node3DEditor::get_singleton()->is_snap_enabled()) {
 				d = Math::snapped(d, Node3DEditor::get_singleton()->get_translate_snap());
 			}
@@ -211,7 +211,7 @@ void GPUParticles3DEmissionShapeGizmoPlugin::set_handle(const EditorNode3DGizmo 
 			}
 			mat->set_emission_ring_radius(d);
 		} else {
-			Geometry3D::get_closest_points_between_segments(Vector3(-4096, 0, 0), Vector3(4096, 0, 0), s[0], s[1], ra, rb);
+			Geometry3D::get_closest_points_between_segments(Vector3(0, 0, -4096), Vector3(0, 0, 4096), s[0], s[1], ra, rb);
 			d = ra.z;
 			if (Node3DEditor::get_singleton()->is_snap_enabled()) {
 				d = Math::snapped(d, Node3DEditor::get_singleton()->get_translate_snap());
@@ -444,7 +444,17 @@ void GPUParticles3DEmissionShapeGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) 
 				points.push_back(basis.xform(Vector3(inner_a.x * scale.x + offset.x, -half_ring_height * scale.y + offset.y, inner_a.y * scale.z + offset.z)));
 			}
 
+			Vector<Vector3> handles;
+			Vector<int> ids;
+			handles.push_back(Vector3(0, 0,  half_ring_height));
+			ids.push_back(1);
+			handles.push_back(Vector3(ring_radius, 0, 0));
+			ids.push_back(2);
+			handles.push_back(Vector3(ring_inner_radius, 0, 0));
+			ids.push_back(3);
+
 			p_gizmo->add_lines(points, material);
+			p_gizmo->add_handles(handles, handles_material, ids);
 		}
 	}
 }
