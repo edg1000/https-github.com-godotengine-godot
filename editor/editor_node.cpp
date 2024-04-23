@@ -4391,8 +4391,10 @@ void EditorNode::_project_run_started() {
 		log->clear();
 	}
 
-	if (bool(EDITOR_GET("run/output/always_open_output_on_play"))) {
-		bottom_panel->make_item_visible(log);
+	if (!bool(EDITOR_GET("run/output/keep_current_bottom_panel_on_play"))) {
+		if (bool(EDITOR_GET("run/output/always_open_output_on_play"))) {
+			bottom_panel->make_item_visible(log);
+		}
 	}
 }
 

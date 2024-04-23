@@ -924,6 +924,10 @@
 		<member name="run/output/font_size" type="int" setter="" getter="">
 			The size of the font in the [b]Output[/b] panel at the bottom of the editor. This setting does not impact the font size of the script editor (see [member interface/editor/code_font_size]).
 		</member>
+		<member name="run/output/keep_current_bottom_panel_on_play" type="bool" setter="" getter="">
+			If [code]true[/code], the editor will keep the current bottom panel state when running and stopping the project.
+			[b]Note:[/b] This setting overrides [member run/output/always_close_output_on_stop] and [member run/output/keep_current_bottom_panel_on_play].
+		</member>
 		<member name="run/platforms/linuxbsd/prefer_wayland" type="bool" setter="" getter="">
 			If [code]true[/code], on Linux/BSD, the editor will check for Wayland first instead of X11 (if available).
 		</member>
