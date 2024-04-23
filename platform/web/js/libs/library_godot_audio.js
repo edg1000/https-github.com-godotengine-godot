@@ -193,9 +193,12 @@ const GodotAudio = {
 	godot_audio_input_start__proxy: 'sync',
 	godot_audio_input_start__sig: 'i',
 	godot_audio_input_start: function () {
-		return GodotAudio.create_input(function (input) {
+		if (GodotAudio.create_input(function (input) {
 			input.connect(GodotAudio.driver.get_node());
-		});
+		})) {
+			return 0;
+		}
+		return GodotAudio.input.channelCount;
 	},
 
 	godot_audio_input_stop__proxy: 'sync',
@@ -430,12 +433,12 @@ const GodotAudioScript = {
 				// Read input
 				const inb = GodotRuntime.heapSub(HEAPF32, p_in_buf, p_in_size);
 				const input = event.inputBuffer;
+				const input_channels = input.numberOfChannels;
 				if (GodotAudio.input) {
-					const inlen = input.getChannelData(0).length;
-					for (let ch = 0; ch < 2; ch++) {
+					for (let ch = 0; ch < input_channels; ch++) {
 						const data = input.getChannelData(ch);
-						for (let s = 0; s < inlen; s++) {
-							inb[s * 2 + ch] = data[s];
+						for (let sample = 0; sample < data.length; sample++) {
+							inb[sample * input_channels + ch] = data[sample];
 						}
 					}
 				}
@@ -446,12 +449,12 @@ const GodotAudioScript = {
 				// Write the output.
 				const outb = GodotRuntime.heapSub(HEAPF32, p_out_buf, p_out_size);
 				const output = event.outputBuffer;
-				const channels = output.numberOfChannels;
-				for (let ch = 0; ch < channels; ch++) {
+				const output_channels = output.numberOfChannels;
+				for (let ch = 0; ch < output_channels; ch++) {
 					const data = output.getChannelData(ch);
 					// Loop through samples and assign computed values.
 					for (let sample = 0; sample < data.length; sample++) {
-						data[sample] = outb[sample * channels + ch];
+						data[sample] = outb[sample * output_channels + ch];
 					}
 				}
 			};

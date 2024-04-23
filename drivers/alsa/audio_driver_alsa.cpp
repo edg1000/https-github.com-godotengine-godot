@@ -46,10 +46,11 @@ extern int initialize_pulse(int verbose);
 Error AudioDriverALSA::init_output_device() {
 	mix_rate = _get_configured_mix_rate();
 
-	speaker_mode = SPEAKER_MODE_STEREO;
+	// TODO: `channels` and `buffer_format` are hardcoded.
 	channels = 2;
+	buffer_format = BUFFER_FORMAT_INTEGER_16;
 
-	// If there is a specified output device check that it is really present
+	// If there is a specified output device check that it is really present.
 	if (output_device_name != "Default") {
 		PackedStringArray list = get_output_device_list();
 		if (list.find(output_device_name) == -1) {
@@ -62,19 +63,14 @@ Error AudioDriverALSA::init_output_device() {
 	snd_pcm_hw_params_t *hwparams;
 	snd_pcm_sw_params_t *swparams;
 
-#define CHECK_FAIL(m_cond)                                       \
-	if (m_cond) {                                                \
-		fprintf(stderr, "ALSA ERR: %s\n", snd_strerror(status)); \
-		if (pcm_handle) {                                        \
-			snd_pcm_close(pcm_handle);                           \
-			pcm_handle = nullptr;                                \
-		}                                                        \
-		ERR_FAIL_COND_V(m_cond, ERR_CANT_OPEN);                  \
+#define CHECK_FAIL(m_cond)                                                        \
+	if (m_cond) {                                                                 \
+		if (pcm_handle) {                                                         \
+			snd_pcm_close(pcm_handle);                                            \
+			pcm_handle = nullptr;                                                 \
+		}                                                                         \
+		ERR_FAIL_V_MSG(ERR_CANT_OPEN, vformat("ALSA: %s", snd_strerror(status))); \
 	}
-
-	//todo, add
-	//6 chans - "plug:surround51"
-	//4 chans - "plug:surround40";
 
 	if (output_device_name == "Default") {
 		status = snd_pcm_open(&pcm_handle, "default", SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK);
@@ -97,18 +93,16 @@ Error AudioDriverALSA::init_output_device() {
 	status = snd_pcm_hw_params_set_access(pcm_handle, hwparams, SND_PCM_ACCESS_RW_INTERLEAVED);
 	CHECK_FAIL(status < 0);
 
-	//not interested in anything else
 	status = snd_pcm_hw_params_set_format(pcm_handle, hwparams, SND_PCM_FORMAT_S16_LE);
 	CHECK_FAIL(status < 0);
 
-	//todo: support 4 and 6
-	status = snd_pcm_hw_params_set_channels(pcm_handle, hwparams, 2);
+	status = snd_pcm_hw_params_set_channels(pcm_handle, hwparams, channels);
 	CHECK_FAIL(status < 0);
 
 	status = snd_pcm_hw_params_set_rate_near(pcm_handle, hwparams, &mix_rate, nullptr);
 	CHECK_FAIL(status < 0);
 
-	// In ALSA the period size seems to be the one that will determine the actual latency
+	// In ALSA the period size seems to be the one that will determine the actual latency.
 	// Ref: https://www.alsa-project.org/main/index.php/FramesPeriods
 	unsigned int periods = 2;
 	int latency = Engine::get_singleton()->get_audio_output_latency();
@@ -116,7 +110,7 @@ Error AudioDriverALSA::init_output_device() {
 	buffer_size = buffer_frames * periods;
 	period_size = buffer_frames;
 
-	// set buffer size from project settings
+	// Set buffer size from project settings.
 	status = snd_pcm_hw_params_set_buffer_size_near(pcm_handle, hwparams, &buffer_size);
 	CHECK_FAIL(status < 0);
 
@@ -130,8 +124,6 @@ Error AudioDriverALSA::init_output_device() {
 
 	status = snd_pcm_hw_params(pcm_handle, hwparams);
 	CHECK_FAIL(status < 0);
-
-	//snd_pcm_hw_params_free(&hwparams);
 
 	snd_pcm_sw_params_alloca(&swparams);
 
@@ -147,7 +139,6 @@ Error AudioDriverALSA::init_output_device() {
 	status = snd_pcm_sw_params(pcm_handle, swparams);
 	CHECK_FAIL(status < 0);
 
-	samples_in.resize(period_size * channels);
 	samples_out.resize(period_size * channels);
 
 	return OK;
@@ -162,7 +153,7 @@ Error AudioDriverALSA::init() {
 #endif
 #ifdef PULSEAUDIO_ENABLED
 	// On pulse enabled systems Alsa will silently use pulse.
-	// It doesn't matter if this fails as that likely means there is no pulse
+	// It doesn't matter if this fails as that likely means there is no pulse.
 	initialize_pulse(dylibloader_verbose);
 #endif
 
@@ -204,13 +195,8 @@ void AudioDriverALSA::thread_func(void *p_udata) {
 			for (uint64_t i = 0; i < ad->period_size * ad->channels; i++) {
 				ad->samples_out.write[i] = 0;
 			}
-
 		} else {
-			ad->audio_server_process(ad->period_size, ad->samples_in.ptrw());
-
-			for (uint64_t i = 0; i < ad->period_size * ad->channels; i++) {
-				ad->samples_out.write[i] = ad->samples_in[i] >> 16;
-			}
+			ad->audio_server_process(ad->period_size, ad->samples_out.ptrw());
 		}
 
 		int todo = ad->period_size;
@@ -273,8 +259,12 @@ int AudioDriverALSA::get_mix_rate() const {
 	return mix_rate;
 }
 
-AudioDriver::SpeakerMode AudioDriverALSA::get_speaker_mode() const {
-	return speaker_mode;
+int AudioDriverALSA::get_output_channels() const {
+	return channels;
+}
+
+AudioDriver::BufferFormat AudioDriverALSA::get_output_buffer_format() const {
+	return buffer_format;
 }
 
 PackedStringArray AudioDriverALSA::get_output_device_list() {

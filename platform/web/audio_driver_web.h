@@ -44,8 +44,10 @@ private:
 		bool inited = false;
 		float output_latency = 0.0;
 		int state = -1;
-		int channel_count = 0;
 		int mix_rate = 0;
+
+		int output_channels = 0;
+		int input_channels = 0;
 	};
 	static AudioContext audio_context;
 
@@ -53,8 +55,10 @@ private:
 	float *input_rb = nullptr;
 
 	int buffer_length = 0;
-	int mix_rate = 0;
-	int channel_count = 0;
+
+	// No other format is available.
+	BufferFormat output_buffer_format = BUFFER_FORMAT_FLOAT;
+	BufferFormat input_buffer_format = BUFFER_FORMAT_FLOAT;
 
 	WASM_EXPORT static void _state_change_callback(int p_state);
 	WASM_EXPORT static void _latency_update_callback(float p_latency);
@@ -79,11 +83,16 @@ public:
 	virtual void finish() final;
 
 	virtual int get_mix_rate() const override;
-	virtual SpeakerMode get_speaker_mode() const override;
 	virtual float get_latency() override;
+
+	virtual int get_output_channels() const override;
+	virtual BufferFormat get_output_buffer_format() const override;
 
 	virtual Error input_start() override;
 	virtual Error input_stop() override;
+
+	virtual int get_input_channels() const override;
+	virtual BufferFormat get_input_buffer_format() const override;
 
 	static void resume();
 

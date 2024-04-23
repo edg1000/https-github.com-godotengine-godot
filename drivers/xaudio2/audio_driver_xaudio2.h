@@ -36,7 +36,6 @@
 #include "core/templates/safe_refcount.h"
 #include "servers/audio_server.h"
 
-#include <mmsystem.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <wrl/client.h>
@@ -67,16 +66,15 @@ class AudioDriverXAudio2 : public AudioDriver {
 	Thread thread;
 	Mutex mutex;
 
-	int32_t *samples_in = nullptr;
 	int16_t *samples_out[AUDIO_BUFFERS];
 
 	static void thread_func(void *p_udata);
 	int buffer_size = 0;
 
 	unsigned int mix_rate = 0;
-	SpeakerMode speaker_mode = SpeakerMode::SPEAKER_MODE_STEREO;
-
 	int channels = 0;
+
+	BufferFormat buffer_format = NO_BUFFER;
 
 	SafeFlag active;
 	SafeFlag exit_thread;
@@ -98,15 +96,16 @@ public:
 	virtual Error init() override;
 	virtual void start() override;
 	virtual int get_mix_rate() const override;
-	virtual SpeakerMode get_speaker_mode() const override;
 	virtual float get_latency() override;
+
+	virtual int get_output_channels() const override;
+	virtual BufferFormat get_output_buffer_format() const override;
 
 	virtual void lock() override;
 	virtual void unlock() override;
 	virtual void finish() override;
 
 	AudioDriverXAudio2();
-	~AudioDriverXAudio2() {}
 };
 
 #endif // AUDIO_DRIVER_XAUDIO2_H
