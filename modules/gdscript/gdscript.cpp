@@ -1404,6 +1404,13 @@ void GDScript::_save_orphaned_subclasses(ClearData *p_clear_data) {
 	}
 }
 
+String GDScript::get_script_name() const {
+	if (get_local_name() != StringName()) {
+		return get_local_name();
+	}
+	return get_fully_qualified_name().get_file();
+}
+
 #ifdef DEBUG_ENABLED
 String GDScript::debug_get_script_name(const Ref<Script> &p_script) {
 	if (p_script.is_valid()) {
@@ -2043,6 +2050,21 @@ ScriptLanguage *GDScriptInstance::get_language() {
 
 const Variant GDScriptInstance::get_rpc_config() const {
 	return script->get_rpc_config();
+}
+
+void GDScriptInstance::tag_collect_pass(uint32_t p_pass, bool p_collect_containers) {
+	if (collect_pass == p_pass) {
+		return;
+	}
+
+	collect_pass = p_pass; // Set beforehand due to recursion.
+
+	int mb_count = members.size();
+	const Variant *mb = members.ptr();
+
+	for (int i = 0; i < mb_count; i++) {
+		mb[i].tag_collect_pass(p_pass, p_collect_containers);
+	}
 }
 
 void GDScriptInstance::reload_members() {
