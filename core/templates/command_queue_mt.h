@@ -401,6 +401,8 @@ class CommandQueueMT {
 	void wait_for_flush();
 	SyncSemaphore *_alloc_sync_sem();
 
+	void _no_op() {}
+
 public:
 	void lock();
 	void unlock();
@@ -422,8 +424,13 @@ public:
 			_flush();
 		}
 	}
+
 	void flush_all() {
 		_flush();
+	}
+
+	void sync() {
+		push_and_sync(this, &CommandQueueMT::_no_op);
 	}
 
 	void wait_and_flush() {
@@ -433,7 +440,9 @@ public:
 	}
 
 	void set_pump_task_id(WorkerThreadPool::TaskID p_task_id) {
+		lock();
 		pump_task_id = p_task_id;
+		unlock();
 	}
 
 	CommandQueueMT();
