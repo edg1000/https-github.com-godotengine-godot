@@ -311,7 +311,7 @@ class CommandQueueMT {
 	struct CommandBase {
 		virtual void call() = 0;
 		virtual SyncSemaphore *get_sync_semaphore() { return nullptr; }
-		virtual ~CommandBase() = default; // Won't be called.
+		virtual ~CommandBase() = default;
 	};
 
 	struct SyncCommand : public CommandBase {
@@ -385,6 +385,10 @@ class CommandQueueMT {
 				sync_sem->sem.post(); // Release in case it needs sync/ret.
 			}
 
+			// If the command involved reallocating the buffer, the address may have changed.
+			cmd = reinterpret_cast<CommandBase *>(&command_mem[flush_read_ptr]);
+			cmd->~CommandBase();
+
 			flush_read_ptr += size;
 		}
 		WorkerThreadPool::thread_exit_command_queue_mt_flush();
@@ -396,6 +400,8 @@ class CommandQueueMT {
 
 	void wait_for_flush();
 	SyncSemaphore *_alloc_sync_sem();
+
+	void _no_op() {}
 
 public:
 	void lock();
@@ -418,8 +424,13 @@ public:
 			_flush();
 		}
 	}
+
 	void flush_all() {
 		_flush();
+	}
+
+	void sync() {
+		push_and_sync(this, &CommandQueueMT::_no_op);
 	}
 
 	void wait_and_flush() {
@@ -429,7 +440,9 @@ public:
 	}
 
 	void set_pump_task_id(WorkerThreadPool::TaskID p_task_id) {
+		lock();
 		pump_task_id = p_task_id;
+		unlock();
 	}
 
 	CommandQueueMT();
