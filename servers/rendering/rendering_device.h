@@ -180,6 +180,12 @@ private:
 	Buffer *_get_buffer_from_owner(RID p_buffer);
 	Error _buffer_update(Buffer *p_buffer, RID p_buffer_id, size_t p_offset, const uint8_t *p_data, size_t p_data_size, bool p_use_draw_queue = false, uint32_t p_required_align = 32);
 
+	void update_perf_report();
+
+	uint32_t gpu_copy_count = 0;
+	uint32_t copy_bytes_count = 0;
+	String perf_report_text;
+
 	RID_Owner<Buffer> uniform_buffer_owner;
 	RID_Owner<Buffer> storage_buffer_owner;
 	RID_Owner<Buffer> texture_buffer_owner;
@@ -814,12 +820,15 @@ public:
 	RID shader_create_from_spirv(const Vector<ShaderStageSPIRVData> &p_spirv, const String &p_shader_name = "");
 	RID shader_create_from_bytecode(const Vector<uint8_t> &p_shader_binary, RID p_placeholder = RID());
 	RID shader_create_placeholder();
+	void shader_destroy_modules(RID p_shaderRID);
+	void _destroy_all_shader_modules();
 
 	uint64_t shader_get_vertex_input_attribute_mask(RID p_shader);
 
 	/******************/
 	/**** UNIFORMS ****/
 	/******************/
+	String get_perf_report() const;
 
 	enum StorageBufferUsage {
 		STORAGE_BUFFER_USAGE_DISPATCH_INDIRECT = 1,
@@ -1094,7 +1103,7 @@ private:
 
 	void _draw_list_insert_clear_region(DrawList *p_draw_list, Framebuffer *p_framebuffer, Point2i p_viewport_offset, Point2i p_viewport_size, bool p_clear_color, const Vector<Color> &p_clear_colors, bool p_clear_depth, float p_depth, uint32_t p_stencil);
 	Error _draw_list_setup_framebuffer(Framebuffer *p_framebuffer, InitialAction p_initial_color_action, FinalAction p_final_color_action, InitialAction p_initial_depth_action, FinalAction p_final_depth_action, RDD::FramebufferID *r_framebuffer, RDD::RenderPassID *r_render_pass, uint32_t *r_subpass_count);
-	Error _draw_list_render_pass_begin(Framebuffer *p_framebuffer, InitialAction p_initial_color_action, FinalAction p_final_color_action, InitialAction p_initial_depth_action, FinalAction p_final_depth_action, const Vector<Color> &p_clear_colors, float p_clear_depth, uint32_t p_clear_stencil, Point2i p_viewport_offset, Point2i p_viewport_size, RDD::FramebufferID p_framebuffer_driver_id, RDD::RenderPassID p_render_pass);
+	Error _draw_list_render_pass_begin(Framebuffer *p_framebuffer, InitialAction p_initial_color_action, FinalAction p_final_color_action, InitialAction p_initial_depth_action, FinalAction p_final_depth_action, const Vector<Color> &p_clear_colors, float p_clear_depth, uint32_t p_clear_stencil, Point2i p_viewport_offset, Point2i p_viewport_size, RDD::FramebufferID p_framebuffer_driver_id, RDD::RenderPassID p_render_pass, uint32_t p_breadcrumb);
 	void _draw_list_set_viewport(Rect2i p_rect);
 	void _draw_list_set_scissor(Rect2i p_rect);
 	_FORCE_INLINE_ DrawList *_get_draw_list_ptr(DrawListID p_id);
@@ -1103,7 +1112,7 @@ private:
 
 public:
 	DrawListID draw_list_begin_for_screen(DisplayServer::WindowID p_screen = 0, const Color &p_clear_color = Color());
-	DrawListID draw_list_begin(RID p_framebuffer, InitialAction p_initial_color_action, FinalAction p_final_color_action, InitialAction p_initial_depth_action, FinalAction p_final_depth_action, const Vector<Color> &p_clear_color_values = Vector<Color>(), float p_clear_depth = 1.0, uint32_t p_clear_stencil = 0, const Rect2 &p_region = Rect2());
+	DrawListID draw_list_begin(RID p_framebuffer, InitialAction p_initial_color_action, FinalAction p_final_color_action, InitialAction p_initial_depth_action, FinalAction p_final_depth_action, const Vector<Color> &p_clear_color_values = Vector<Color>(), float p_clear_depth = 1.0, uint32_t p_clear_stencil = 0, const Rect2 &p_region = Rect2(), RDD::BreadcrumbMarker p_phase = RDD::BreadcrumbMarker::NONE, uint32_t p_breadcrumb_data = 0);
 
 	void draw_list_set_blend_constants(DrawListID p_list, const Color &p_color);
 	void draw_list_bind_render_pipeline(DrawListID p_list, RID p_render_pipeline);
@@ -1355,6 +1364,19 @@ public:
 
 	uint64_t get_driver_resource(DriverResource p_resource, RID p_rid = RID(), uint64_t p_index = 0);
 
+	String get_tracked_object_name(uint32_t p_type_index) const;
+	uint64_t get_tracked_object_type_count() const;
+
+	uint64_t get_driver_total_memory() const;
+	uint64_t get_driver_allocation_count() const;
+	uint64_t get_driver_memory_by_object_type(uint32_t p_type) const;
+	uint64_t get_driver_allocs_by_object_type(uint32_t p_type) const;
+
+	uint64_t get_device_total_memory() const;
+	uint64_t get_device_allocation_count() const;
+	uint64_t get_device_memory_by_object_type(uint32_t p_type) const;
+	uint64_t get_device_allocs_by_object_type(uint32_t p_type) const;
+
 	static RenderingDevice *get_singleton();
 
 	RenderingDevice();
@@ -1427,6 +1449,7 @@ VARIANT_ENUM_CAST(RenderingDevice::FinalAction)
 VARIANT_ENUM_CAST(RenderingDevice::Limit)
 VARIANT_ENUM_CAST(RenderingDevice::MemoryType)
 VARIANT_ENUM_CAST(RenderingDevice::Features)
+VARIANT_ENUM_CAST(RenderingDevice::BreadcrumbMarker)
 
 #ifndef DISABLE_DEPRECATED
 VARIANT_BITFIELD_CAST(RenderingDevice::BarrierMask);
