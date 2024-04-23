@@ -922,6 +922,11 @@
 			<description>
 			</description>
 		</method>
+		<method name="_is_active" qualifiers="virtual">
+			<return type="bool" />
+			<description>
+			</description>
+		</method>
 		<method name="_shape_get_custom_solver_bias" qualifiers="virtual const">
 			<return type="float" />
 			<param index="0" name="shape" type="RID" />
