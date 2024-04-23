@@ -37,6 +37,11 @@
 #include "servers/rendering_server.h"
 #include "texture.h"
 
+#ifdef TOOLS_ENABLED
+#include "editor/editor_help.h"
+#include "modules/regex/regex.h"
+#endif
+
 Shader::Mode Shader::get_mode() const {
 	return mode;
 }
@@ -121,6 +126,11 @@ void Shader::get_shader_uniform_list(List<PropertyInfo> *p_params, bool p_get_gr
 	List<PropertyInfo> local;
 	RenderingServer::get_singleton()->get_shader_parameter_list(shader, &local);
 
+#ifdef TOOLS_ENABLED
+	DocData::ClassDoc class_doc = DocData::ClassDoc();
+	class_doc.name = get_path();
+	class_doc.is_script_doc = true;
+#endif
 	for (PropertyInfo &pi : local) {
 		bool is_group = pi.usage == PROPERTY_USAGE_GROUP || pi.usage == PROPERTY_USAGE_SUBGROUP;
 		if (!p_get_groups && is_group) {
@@ -136,9 +146,31 @@ void Shader::get_shader_uniform_list(List<PropertyInfo> *p_params, bool p_get_gr
 			if (pi.type == Variant::RID) {
 				pi.type = Variant::OBJECT;
 			}
+#ifdef TOOLS_ENABLED
+			if (Engine::get_singleton()->is_editor_hint()) {
+				const RegEx pattern("/\\*\\*([^*]|[\\r\\n]|(\\*+([^*/]|[\\r\\n])))*\\*+/\\s*uniform\\s+\\w+\\s+" + pi.name + "(?=[\\s:;=])");
+				Ref<RegExMatch> pattern_ref = pattern.search(code);
+				if (pattern_ref != nullptr) {
+					RegExMatch *match = pattern_ref.ptr();
+					const RegEx pattern_tip("\\/\\*\\*([\\s\\S]*?)\\*/");
+					Ref<RegExMatch> pattern_tip_ref = pattern_tip.search(match->get_string(0));
+					RegExMatch *match_tip = pattern_tip_ref.ptr();
+					const RegEx pattern_stripped("\\n\\s*\\*\\s*");
+					DocData::PropertyDoc prop_doc;
+					prop_doc.name = "shader_parameter/" + pi.name;
+					prop_doc.description = pattern_stripped.sub(match_tip->get_string(1), "\n", true);
+					class_doc.properties.push_back(prop_doc);
+				}
+			}
+#endif
 			p_params->push_back(pi);
 		}
 	}
+#ifdef TOOLS_ENABLED
+	if (!class_doc.name.is_empty() && p_params) {
+		EditorHelp::get_doc_data()->add_doc(class_doc);
+	}
+#endif
 }
 
 RID Shader::get_rid() const {
